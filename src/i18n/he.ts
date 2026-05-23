@@ -63,7 +63,7 @@ export const ui = {
     userOwesMemberLabel: "אני חייב לו",
     dateLabel: "תאריך",
     reasonLabel: "סיבה",
-    reasonPlaceholder: "לדוגמה: ארוחת צהריים",
+    reasonPlaceholder: "לדוגמה: סופר",
     commonReasons: ["אוכל", "נסיעה", "קניות", "מתנה", "שכר דירה", "אחר"],
     notesLabel: "הערות",
     notesPlaceholder: "פרטים נוספים, אם צריך",
