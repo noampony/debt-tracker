@@ -10,10 +10,10 @@ import { formatIls } from "../lib/money";
 
 const emptyRepository: DebtRepository = {
   getMembers: async () => [],
-  createMember: async () => undefined,
+  createMember: async (member) => member,
   updateMember: async () => undefined,
   getTransactions: async () => [],
-  createTransaction: async () => undefined,
+  createTransaction: async (transaction) => transaction,
 };
 
 function createMemoryRepository(
@@ -27,6 +27,7 @@ function createMemoryRepository(
     getMembers: async () => [...members],
     createMember: async (member) => {
       members.push(member);
+      return member;
     },
     updateMember: async (member) => {
       const memberIndex = members.findIndex((storedMember) => storedMember.id === member.id);
@@ -38,6 +39,7 @@ function createMemoryRepository(
     getTransactions: async () => [...transactions],
     createTransaction: async (transaction) => {
       transactions.push(transaction);
+      return transaction;
     },
   };
 }
@@ -55,6 +57,7 @@ function createInspectableMemoryRepository(
       getMembers: async () => [...members],
       createMember: async (member) => {
         members.push(member);
+        return member;
       },
       updateMember: async (member) => {
         const memberIndex = members.findIndex((storedMember) => storedMember.id === member.id);
@@ -67,6 +70,7 @@ function createInspectableMemoryRepository(
       createTransaction: async (transaction) => {
         createdTransactions.push(transaction);
         transactions.push(transaction);
+        return transaction;
       },
     },
     createdTransactions,
