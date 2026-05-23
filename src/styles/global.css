@@ -130,6 +130,34 @@ p {
   gap: 12px;
 }
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.summary-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.summary-label {
+  color: #625b52;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.summary-amount {
+  color: #221f1b;
+  direction: ltr;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: end;
+}
+
 .member-row {
   align-items: flex-start;
 }
@@ -306,6 +334,10 @@ p {
 }
 
 @media (max-width: 420px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
   .member-row {
     display: grid;
   }

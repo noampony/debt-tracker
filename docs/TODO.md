@@ -660,7 +660,7 @@ Definition of Done:
 
 ## 6.1 Main Summary
 
-* [ ] Implement aggregate summary cards.
+* [x] Implement aggregate summary cards.
 
 Description:
 Show total debt direction across all members.
@@ -680,7 +680,7 @@ Definition of Done:
 
 * Summary updates after new transactions and resets.
 
-* [ ] Implement natural Hebrew balance text per member.
+* [x] Implement natural Hebrew balance text per member.
 
 Description:
 Display balances in plain Hebrew instead of requiring the user to interpret signs.

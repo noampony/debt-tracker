@@ -17,6 +17,11 @@ export const ui = {
     quickActionTitle: "רישום חוב מהיר",
     quickActionDescription: "בחר איש קשר, הזן סכום וסיבה, ושמור את התנועה במקום.",
   },
+  overview: {
+    title: "סיכום חובות",
+    totalOwedToUser: "סה״כ חייבים לך",
+    totalUserOwes: "סה״כ אתה חייב",
+  },
   members: {
     title: "אנשי קשר",
     loading: "טוען אנשי קשר",
