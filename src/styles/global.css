@@ -189,6 +189,14 @@ p {
   align-items: flex-start;
 }
 
+.member-row > div:first-child {
+  min-width: 0;
+}
+
+.member-row h3 {
+  overflow-wrap: anywhere;
+}
+
 .member-detail-card,
 .transaction-card {
   display: grid;
@@ -355,6 +363,7 @@ p {
 }
 
 .member-actions {
+  flex-shrink: 0;
   justify-content: flex-end;
 }
 
