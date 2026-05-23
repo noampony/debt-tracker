@@ -18,7 +18,8 @@
     "test:server": "vitest run --config vitest.server.config.ts",
     "test:e2e": "playwright test",
     "db:migrate": "prisma migrate deploy",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:encode-fields": "tsx scripts/migrate-encode-fields.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
