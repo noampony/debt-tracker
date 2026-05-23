@@ -1,6 +1,7 @@
 import type { DebtRepository } from "./debtRepository";
 import type { Member } from "../features/members/types";
 import type { Transaction, TransactionDirection } from "../features/transactions/types";
+import { createId } from "../lib/ids";
 
 export const LOCAL_STORAGE_SCHEMA_VERSION = 1;
 
@@ -179,6 +180,36 @@ export function createLocalStorageDebtRepository(
         records: [...collection.records, copyTransaction(transaction)],
       });
       return copyTransaction(transaction);
+    },
+
+    async resetMemberDebt(memberId) {
+      const allTransactions = readCollection(storage, "transactions", isTransaction).records;
+      const balanceMinor = allTransactions
+        .filter((tx) => tx.memberId === memberId)
+        .reduce((sum, tx) => sum + (tx.direction === "member_owes_user" ? tx.amountMinor : -tx.amountMinor), 0);
+
+      if (balanceMinor === 0) return null;
+
+      const now = new Date().toISOString();
+      const today = now.split("T")[0];
+      const resetTx: Transaction = {
+        id: createId(),
+        memberId,
+        amountMinor: Math.abs(balanceMinor),
+        direction: balanceMinor > 0 ? "user_owes_member" : "member_owes_user",
+        title: "איפוס חוב",
+        transactionDate: today,
+        createdAt: now,
+        updatedAt: now,
+        type: "reset_adjustment",
+      };
+
+      const collection = readCollection(storage, "transactions", isTransaction);
+      writeCollection(storage, "transactions", {
+        ...collection,
+        records: [...collection.records, copyTransaction(resetTx)],
+      });
+      return copyTransaction(resetTx);
     },
   };
 }

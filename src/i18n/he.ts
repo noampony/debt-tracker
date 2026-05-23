@@ -87,4 +87,16 @@ export const ui = {
     errorEmailTaken: "כתובת המייל כבר רשומה במערכת",
     errorGeneric: "אירעה שגיאה. נסה/י שנית.",
   },
+  loading: {
+    main: "טוען נתונים...",
+    savingMember: "שומר...",
+    savingTransaction: "שומר עסקה...",
+    resetting: "מאפס...",
+  },
+  error: {
+    loadFailed: "שגיאה בטעינת הנתונים. נסה/י לרענן את הדף.",
+    memberCreateFailed: "שגיאה בשמירת איש הקשר. נסה/י שנית.",
+    transactionCreateFailed: "שגיאה בשמירת העסקה. נסה/י שנית.",
+    resetFailed: "שגיאה באיפוס החוב. נסה/י שנית.",
+  },
 } as const;
