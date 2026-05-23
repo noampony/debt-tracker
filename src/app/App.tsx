@@ -14,7 +14,6 @@ import { createId } from "../lib/ids";
 import { formatIls, parseIlsInputToMinor } from "../lib/money";
 import type { DebtRepository } from "../storage/debtRepository";
 import type { TransactionDirection } from "../features/transactions/types";
-import { createResetAdjustmentTransaction } from "../features/transactions/reset";
 
 type AppProps = {
   repository: DebtRepository;
@@ -74,6 +73,8 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   const [memberName, setMemberName] = useState("");
   const [memberNameError, setMemberNameError] = useState("");
   const [memberActionMessage, setMemberActionMessage] = useState("");
+  const [memberCreateError, setMemberCreateError] = useState("");
+  const [isSavingMember, setIsSavingMember] = useState(false);
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
   const [transactionMemberId, setTransactionMemberId] = useState("");
   const [transactionAmount, setTransactionAmount] = useState("");
@@ -82,9 +83,14 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   const [transactionDate, setTransactionDate] = useState(todayDateIso);
   const [transactionNotes, setTransactionNotes] = useState("");
   const [transactionErrors, setTransactionErrors] = useState<TransactionFormErrors>({});
+  const [transactionCreateError, setTransactionCreateError] = useState("");
+  const [isSavingTransaction, setIsSavingTransaction] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const memberListItems = useMemo(
     () =>
@@ -162,6 +168,8 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     let isMounted = true;
 
     async function loadPersistedData() {
+      setIsLoading(true);
+      setLoadError("");
       try {
         const [members, transactions] = await Promise.all([repository.getMembers(), repository.getTransactions()]);
 
@@ -173,6 +181,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
         setTransactions(transactions);
       } catch {
         if (isMounted) {
+          setLoadError(ui.error.loadFailed);
           setMembers([]);
           setTransactions([]);
         }
@@ -200,10 +209,13 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     setIsAddMemberOpen(false);
     setMemberName("");
     setMemberNameError("");
+    setMemberCreateError("");
   }
 
   async function handleAddMemberSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isSavingMember) return;
 
     const trimmedName = memberName.trim();
 
@@ -219,6 +231,9 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
       return;
     }
 
+    setIsSavingMember(true);
+    setMemberCreateError("");
+
     const now = new Date().toISOString();
     const member: Member = {
       id: createId(),
@@ -227,15 +242,21 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
       updatedAt: now,
     };
 
-    const created = await repository.createMember(member);
-    setMembers((currentMembers) => {
-      if (currentMembers.some((currentMember) => currentMember.id === created.id)) {
-        return [...currentMembers];
-      }
+    try {
+      const created = await repository.createMember(member);
+      setMembers((currentMembers) => {
+        if (currentMembers.some((currentMember) => currentMember.id === created.id)) {
+          return [...currentMembers];
+        }
 
-      return [...currentMembers, created];
-    });
-    closeAddMemberForm();
+        return [...currentMembers, created];
+      });
+      closeAddMemberForm();
+    } catch {
+      setMemberCreateError(ui.error.memberCreateFailed);
+    } finally {
+      setIsSavingMember(false);
+    }
   }
 
   function openTransactionForm(memberId = "") {
@@ -259,6 +280,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     setTransactionDate(getTodayDateIso());
     setTransactionNotes("");
     setTransactionErrors({});
+    setTransactionCreateError("");
   }
 
   function validateTransactionAmount(amount: string): string | undefined {
@@ -286,6 +308,8 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   async function handleAddTransactionSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (isSavingTransaction) return;
+
     const trimmedTitle = transactionTitle.trim();
     const trimmedNotes = transactionNotes.trim();
     const errors: TransactionFormErrors = {
@@ -302,6 +326,9 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
       return;
     }
 
+    setIsSavingTransaction(true);
+    setTransactionCreateError("");
+
     const now = new Date().toISOString();
     const transaction: Transaction = {
       id: createId(),
@@ -316,9 +343,15 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
       type: "manual",
     };
 
-    const created = await repository.createTransaction(transaction);
-    setTransactions((currentTransactions) => [...currentTransactions, created]);
-    closeTransactionForm();
+    try {
+      const created = await repository.createTransaction(transaction);
+      setTransactions((currentTransactions) => [...currentTransactions, created]);
+      closeTransactionForm();
+    } catch {
+      setTransactionCreateError(ui.error.transactionCreateFailed);
+    } finally {
+      setIsSavingTransaction(false);
+    }
   }
 
   function openResetDialog() {
@@ -331,30 +364,28 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
 
   function closeResetDialog() {
     setIsResetDialogOpen(false);
+    setResetError("");
   }
 
   async function handleConfirmReset() {
-    if (!selectedMember) {
+    if (!selectedMember || isResetting) {
       return;
     }
 
-    const now = new Date().toISOString();
-    const resetTransaction = createResetAdjustmentTransaction({
-      id: createId(),
-      memberId: selectedMember.id,
-      balanceMinor: selectedMemberBalanceMinor,
-      transactionDate: getTodayDateIso(),
-      createdAt: now,
-    });
+    setIsResetting(true);
+    setResetError("");
 
-    if (!resetTransaction) {
+    try {
+      const resetTransaction = await repository.resetMemberDebt(selectedMember.id);
+      if (resetTransaction) {
+        setTransactions((currentTransactions) => [...currentTransactions, resetTransaction]);
+      }
       closeResetDialog();
-      return;
+    } catch {
+      setResetError(ui.error.resetFailed);
+    } finally {
+      setIsResetting(false);
     }
-
-    const created = await repository.createTransaction(resetTransaction);
-    setTransactions((currentTransactions) => [...currentTransactions, created]);
-    closeResetDialog();
   }
 
   function renderResetDialog() {
@@ -370,12 +401,17 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
           <Card className="dialog-card">
             <h3 id="reset-dialog-title">{ui.members.resetDialogTitle}</h3>
             <p>{dialogBody}</p>
+            {resetError && (
+              <p className="field-error" role="alert">
+                {resetError}
+              </p>
+            )}
             <div className="button-row">
-              <Button type="button" variant="ghost" onClick={closeResetDialog}>
+              <Button type="button" variant="ghost" onClick={closeResetDialog} disabled={isResetting}>
                 {ui.members.resetDialogCancel}
               </Button>
-              <Button type="button" variant="secondary" onClick={handleConfirmReset}>
-                {ui.members.resetDialogConfirm}
+              <Button type="button" variant="secondary" onClick={handleConfirmReset} disabled={isResetting}>
+                {isResetting ? ui.loading.resetting : ui.members.resetDialogConfirm}
               </Button>
             </div>
           </Card>
@@ -512,9 +548,17 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
               />
             </label>
 
+            {transactionCreateError && (
+              <p className="field-error" role="alert">
+                {transactionCreateError}
+              </p>
+            )}
+
             <div className="button-row">
-              <Button type="submit">{ui.actions.save}</Button>
-              <Button type="button" variant="ghost" onClick={closeTransactionForm}>
+              <Button type="submit" disabled={isSavingTransaction}>
+                {isSavingTransaction ? ui.loading.savingTransaction : ui.actions.save}
+              </Button>
+              <Button type="button" variant="ghost" onClick={closeTransactionForm} disabled={isSavingTransaction}>
                 {ui.actions.cancel}
               </Button>
             </div>
@@ -668,9 +712,16 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                   {memberNameError}
                 </p>
               )}
+              {memberCreateError && (
+                <p className="field-error" role="alert">
+                  {memberCreateError}
+                </p>
+              )}
               <div className="button-row">
-                <Button type="submit">{ui.actions.save}</Button>
-                <Button type="button" variant="ghost" onClick={closeAddMemberForm}>
+                <Button type="submit" disabled={isSavingMember}>
+                  {isSavingMember ? ui.loading.savingMember : ui.actions.save}
+                </Button>
+                <Button type="button" variant="ghost" onClick={closeAddMemberForm} disabled={isSavingMember}>
                   {ui.actions.cancel}
                 </Button>
               </div>
@@ -684,7 +735,12 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
         )}
         <div className="card-list">
           {isLoading && <p>{ui.members.loading}</p>}
-          {!isLoading && memberListItems.length === 0 && <p>{ui.members.empty}</p>}
+          {loadError && (
+            <p className="error-state" role="alert">
+              {loadError}
+            </p>
+          )}
+          {!isLoading && !loadError && memberListItems.length === 0 && <p>{ui.members.empty}</p>}
           {memberListItems.map((member) => (
             <Card key={member.id}>
               <div className="member-row">

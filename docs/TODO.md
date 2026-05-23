@@ -999,7 +999,7 @@ Every DB query is scoped to `req.userId`. Cross-user access returns 404. Authori
 
 # 10. Frontend Integration with Backend
 
-* [ ] Implement API-backed repository.
+* [x] Implement API-backed repository.
 
 Description:
 Replace or supplement local storage with a repository that communicates with the backend.
@@ -1016,7 +1016,9 @@ Definition of Done:
 
 * Reset action saves to backend.
 
-* [ ] Add loading states.
+Implemented `resetMemberDebt(memberId)` in `DebtRepository` interface. `apiDebtRepository` calls `POST /api/members/:memberId/reset` (server-side balance recalculation). `localStorageDebtRepository` calculates locally. `App.tsx` uses `repository.resetMemberDebt` instead of client-side calculation.
+
+* [x] Add loading states.
 
 Description:
 Show user-friendly Hebrew loading states when backend data is loading.
@@ -1033,7 +1035,9 @@ Definition of Done:
 
 * User cannot accidentally submit the same action repeatedly while pending.
 
-* [ ] Add error states.
+Added `isSavingMember`, `isSavingTransaction`, `isResetting` pending states. Buttons show Hebrew pending labels and are disabled while their action is in-flight. Main screen shows `ui.members.loading` while data loads.
+
+* [x] Add error states.
 
 Description:
 Display clear Hebrew errors when backend actions fail.
@@ -1045,6 +1049,8 @@ Definition of Done:
 * Failed reset shows an error.
 * Failed data loading shows a recoverable error state.
 * Errors do not expose sensitive technical details.
+
+Added `loadError`, `memberCreateError`, `transactionCreateError`, `resetError` states. All display generic Hebrew error messages (`ui.error.*`). No stack traces or internal details exposed. New Hebrew strings added to `src/i18n/he.ts` under `loading` and `error` sections.
 
 ---
 

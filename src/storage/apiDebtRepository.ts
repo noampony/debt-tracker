@@ -116,6 +116,16 @@ export function createApiDebtRepository(
       }
       return normalizeTransaction(body);
     },
+
+    async resetMemberDebt(memberId: string): Promise<Transaction | null> {
+      const res = await req(`${API_BASE}/members/${memberId}/reset`, { method: "POST" });
+      if (res.status === 204) return null;
+      const body = (await res.json()) as Record<string, unknown>;
+      if (!res.ok) {
+        throw new Error(String(body.error ?? "Failed to reset debt"));
+      }
+      return normalizeTransaction(body);
+    },
   };
 }
 

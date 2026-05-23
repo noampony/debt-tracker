@@ -14,6 +14,7 @@ const emptyRepository: DebtRepository = {
   updateMember: async () => undefined,
   getTransactions: async () => [],
   createTransaction: async (transaction) => transaction,
+  resetMemberDebt: async () => null,
 };
 
 function createMemoryRepository(
@@ -40,6 +41,25 @@ function createMemoryRepository(
     createTransaction: async (transaction) => {
       transactions.push(transaction);
       return transaction;
+    },
+    resetMemberDebt: async (memberId) => {
+      const balanceMinor = transactions
+        .filter((tx) => tx.memberId === memberId)
+        .reduce((sum, tx) => sum + (tx.direction === "member_owes_user" ? tx.amountMinor : -tx.amountMinor), 0);
+      if (balanceMinor === 0) return null;
+      const resetTx: Transaction = {
+        id: `reset-${Date.now()}`,
+        memberId,
+        amountMinor: Math.abs(balanceMinor),
+        direction: balanceMinor > 0 ? "user_owes_member" : "member_owes_user",
+        title: "איפוס חוב",
+        transactionDate: "2026-05-23",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        type: "reset_adjustment",
+      };
+      transactions.push(resetTx);
+      return resetTx;
     },
   };
 }
@@ -71,6 +91,26 @@ function createInspectableMemoryRepository(
         createdTransactions.push(transaction);
         transactions.push(transaction);
         return transaction;
+      },
+      resetMemberDebt: async (memberId) => {
+        const balanceMinor = transactions
+          .filter((tx) => tx.memberId === memberId)
+          .reduce((sum, tx) => sum + (tx.direction === "member_owes_user" ? tx.amountMinor : -tx.amountMinor), 0);
+        if (balanceMinor === 0) return null;
+        const resetTx: Transaction = {
+          id: `reset-${Date.now()}`,
+          memberId,
+          amountMinor: Math.abs(balanceMinor),
+          direction: balanceMinor > 0 ? "user_owes_member" : "member_owes_user",
+          title: "איפוס חוב",
+          transactionDate: "2026-05-23",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          type: "reset_adjustment",
+        };
+        createdTransactions.push(resetTx);
+        transactions.push(resetTx);
+        return resetTx;
       },
     },
     createdTransactions,
@@ -566,5 +606,153 @@ describe("App", () => {
       title: ui.members.resetDebt,
       type: "reset_adjustment",
     });
+  });
+
+  it("shows Hebrew loading state while initial data is loading", () => {
+    const neverResolving: DebtRepository = {
+      ...emptyRepository,
+      getMembers: () => new Promise(() => undefined),
+      getTransactions: () => new Promise(() => undefined),
+    };
+
+    render(<App repository={neverResolving} />);
+
+    expect(screen.getByText(ui.members.loading)).toBeInTheDocument();
+  });
+
+  it("shows Hebrew error state when initial data loading fails", async () => {
+    const failingRepository: DebtRepository = {
+      ...emptyRepository,
+      getMembers: async () => {
+        throw new Error("network error");
+      },
+    };
+
+    render(<App repository={failingRepository} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.loadFailed);
+  });
+
+  it("shows Hebrew error when member creation fails and keeps form open", async () => {
+    const user = userEvent.setup();
+    const failingRepository: DebtRepository = {
+      ...emptyRepository,
+      createMember: async () => {
+        throw new Error("server error");
+      },
+    };
+
+    render(<App repository={failingRepository} />);
+
+    await user.click(screen.getByRole("button", { name: ui.actions.addMember }));
+    const addMemberForm = screen.getByRole("form", { name: ui.members.addTitle });
+    await user.type(screen.getByLabelText(ui.members.nameLabel), "דני");
+    await user.click(within(addMemberForm).getByRole("button", { name: ui.actions.save }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.memberCreateFailed);
+    // Form stays open so user can retry
+    expect(screen.getByRole("form", { name: ui.members.addTitle })).toBeInTheDocument();
+  });
+
+  it("shows Hebrew error when transaction creation fails and keeps form open", async () => {
+    const user = userEvent.setup();
+    const failingRepository: DebtRepository = {
+      ...createMemoryRepository([createMember("member-1", "דני")]),
+      createTransaction: async () => {
+        throw new Error("server error");
+      },
+    };
+
+    render(<App repository={failingRepository} />);
+
+    await user.click(screen.getAllByRole("button", { name: ui.actions.newTransaction })[0]);
+    await user.selectOptions(screen.getByLabelText(ui.transaction.memberLabel), "member-1");
+    await user.type(screen.getByLabelText(ui.transaction.amountLabel), "50");
+    await user.type(screen.getByLabelText(ui.transaction.reasonLabel), "ארוחה");
+    await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.transactionCreateFailed);
+    // Form stays open so user can retry
+    expect(screen.getByRole("form", { name: ui.transaction.addTitle })).toBeInTheDocument();
+  });
+
+  it("shows Hebrew error when reset fails and keeps dialog open", async () => {
+    const user = userEvent.setup();
+    const failingRepository: DebtRepository = {
+      ...createMemoryRepository(
+        [createMember("member-1", "דני")],
+        [createTransaction("transaction-1", "member-1", 5000)],
+      ),
+      resetMemberDebt: async () => {
+        throw new Error("server error");
+      },
+    };
+
+    render(<App repository={failingRepository} />);
+
+    const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(".card") as HTMLElement;
+    await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+    await user.click(screen.getByRole("button", { name: ui.members.resetDebt }));
+    await user.click(screen.getByRole("button", { name: ui.members.resetDialogConfirm }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.resetFailed);
+    // Dialog stays open so user can retry
+    expect(screen.getByRole("dialog", { name: ui.members.resetDialogTitle })).toBeInTheDocument();
+  });
+
+  it("disables save button during member creation to prevent duplicate submissions", async () => {
+    const user = userEvent.setup();
+    let resolveCreate!: () => void;
+    const slowRepository: DebtRepository = {
+      ...emptyRepository,
+      createMember: (member) =>
+        new Promise<Member>((resolve) => {
+          resolveCreate = () => resolve(member);
+        }),
+    };
+
+    render(<App repository={slowRepository} />);
+
+    await user.click(screen.getByRole("button", { name: ui.actions.addMember }));
+    const addMemberForm = screen.getByRole("form", { name: ui.members.addTitle });
+    await user.type(screen.getByLabelText(ui.members.nameLabel), "דני");
+    await user.click(within(addMemberForm).getByRole("button", { name: ui.actions.save }));
+
+    // Button should be disabled while pending
+    expect(screen.getByRole("button", { name: ui.loading.savingMember })).toBeDisabled();
+
+    resolveCreate();
+    expect(await screen.findByRole("heading", { level: 3, name: "דני" })).toBeInTheDocument();
+  });
+
+  it("disables confirm button during reset to prevent duplicate submissions", async () => {
+    const user = userEvent.setup();
+    let resolveReset!: (tx: Transaction | null) => void;
+    const slowRepository: DebtRepository = {
+      ...createMemoryRepository(
+        [createMember("member-1", "דני")],
+        [createTransaction("transaction-1", "member-1", 5000)],
+      ),
+      resetMemberDebt: () =>
+        new Promise<Transaction | null>((resolve) => {
+          resolveReset = resolve;
+        }),
+    };
+
+    render(<App repository={slowRepository} />);
+
+    const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(".card") as HTMLElement;
+    await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+    await user.click(screen.getByRole("button", { name: ui.members.resetDebt }));
+    await user.click(screen.getByRole("button", { name: ui.members.resetDialogConfirm }));
+
+    // Confirm button should be disabled while pending
+    expect(screen.getByRole("button", { name: ui.loading.resetting })).toBeDisabled();
+
+    // Resolve with null (balance was already zero — no-op path)
+    resolveReset(null);
+    // Dialog should close after resolution
+    expect(await screen.findByRole("button", { name: ui.members.resetDebt })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: ui.members.resetDialogTitle })).not.toBeInTheDocument();
   });
 });
