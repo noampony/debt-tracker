@@ -1432,37 +1432,51 @@ Implemented in `e2e/mobile-viewport.spec.ts` (2 tests). Tests run at 390×844 (i
 
 ## 15.1 Production Build
 
-* [ ] Ensure production build succeeds.
+* [x] Ensure production build succeeds.
 
 Description:
-The app must build cleanly for deployment.
+The app must build cleanly for Vercel deployment.
 
 Definition of Done:
 
-* Production build command succeeds.
+* `npm run build` succeeds.
 
-* Type checking passes.
+* `npm run typecheck` passes.
 
-* Linting passes.
+* `npm run typecheck:server` passes.
 
-* Tests pass.
+* `npm run lint` passes.
 
-* [ ] Configure deployment target.
+* `npm test` passes.
+
+* `npm run test:server` passes.
+
+Implementation note: Vercel build settings are defined in `vercel.json`. Local verification completed after adding the Vercel function entrypoint.
+
+* [x] Configure deployment target.
 
 Description:
-Set up deployment configuration for the selected hosting platform.
+Set up deployment configuration for Vercel.
 
 Definition of Done:
 
-* Hosting platform is documented.
+* Hosting platform is documented as Vercel.
 
-* Build command is documented.
+* Framework preset is documented as Vite.
+
+* Build command is documented as `npm run build`.
+
+* Output directory is documented as `dist`.
+
+* API function route is documented for `/api/*` and `/health`.
 
 * Runtime/start command is documented if needed.
 
 * Required environment variables are documented.
 
-* [ ] Add deployment health verification.
+Implementation note: `vercel.json` routes `/api/*` and `/health` to `api/index.ts`, and routes all other paths to the Vite SPA. Vercel Functions do not use `npm run start:server`.
+
+* [x] Add deployment health verification.
 
 Description:
 Define how to verify that a deployment is working.
@@ -1473,12 +1487,17 @@ Definition of Done:
 * Authentication works if enabled.
 * Database connection works if backend is enabled.
 * User can complete the core happy path after deployment.
+* `/health` returns OK from the deployed API function.
+* PostgreSQL-backed member and transaction persistence is verified.
+* Reset flow creates a balancing transaction after deployment.
+
+Implementation note: Post-deploy verification steps are documented in `README.md`. Production requires hosted PostgreSQL through `DATABASE_URL`.
 
 ---
 
 ## 15.2 Documentation
 
-* [ ] Create README.
+* [x] Create README.
 
 Description:
 Document how to install, run, test, and deploy the app.
@@ -1495,7 +1514,7 @@ Definition of Done:
 
 * README includes required environment variables.
 
-* [ ] Document architecture decisions.
+* [x] Document architecture decisions.
 
 Description:
 Record key decisions for future maintenance.
@@ -1507,6 +1526,8 @@ Definition of Done:
 * Persistence strategy documented.
 * Money storage decision documented.
 * Reset behavior decision documented.
+
+Implementation note: Architecture decisions are documented in `docs/ARCHITECTURE.md`, including Vercel static hosting, Vercel Functions, Prisma persistence, integer agorot storage, and server-calculated reset adjustments.
 
 ---
 

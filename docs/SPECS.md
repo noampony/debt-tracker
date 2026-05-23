@@ -39,6 +39,18 @@ The user interface must be Hebrew-native:
 
 ---
 
+### 1.4 Deployment Target
+
+The selected hosting target is Vercel:
+
+* The React/Vite frontend is deployed as a Vercel static build.
+* The Express API is exported through a Vercel Function entrypoint.
+* Production persistence must use hosted PostgreSQL through Prisma.
+* Local SQLite files may be used for development and automated tests only.
+* Production secrets such as `DATABASE_URL` and `JWT_SECRET` must be configured in Vercel environment variables and must not be committed.
+
+---
+
 ## 2. Target Users
 
 ### 2.1 Primary User
