@@ -89,6 +89,14 @@ export function createApiDebtRepository(
       }
     },
 
+    async deleteMember(memberId: string): Promise<void> {
+      const res = await req(`${API_BASE}/members/${memberId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = (await res.json()) as Record<string, unknown>;
+        throw new Error(String(body.error ?? "Failed to delete member"));
+      }
+    },
+
     async getTransactions(): Promise<Transaction[]> {
       const res = await req(`${API_BASE}/transactions`);
       if (!res.ok) throw new Error("Failed to load transactions");
@@ -115,6 +123,33 @@ export function createApiDebtRepository(
         throw new Error(String(body.error ?? "Failed to create transaction"));
       }
       return normalizeTransaction(body);
+    },
+
+    async updateTransaction(transaction: Transaction): Promise<Transaction> {
+      const payload = {
+        amountMinor: transaction.amountMinor,
+        direction: transaction.direction,
+        title: transaction.title,
+        notes: transaction.notes,
+        transactionDate: transaction.transactionDate,
+      };
+      const res = await req(`${API_BASE}/transactions/${transaction.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+      const body = (await res.json()) as Record<string, unknown>;
+      if (!res.ok) {
+        throw new Error(String(body.error ?? "Failed to update transaction"));
+      }
+      return normalizeTransaction(body);
+    },
+
+    async deleteTransaction(transactionId: string): Promise<void> {
+      const res = await req(`${API_BASE}/transactions/${transactionId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = (await res.json()) as Record<string, unknown>;
+        throw new Error(String(body.error ?? "Failed to delete transaction"));
+      }
     },
 
     async resetMemberDebt(memberId: string): Promise<Transaction | null> {

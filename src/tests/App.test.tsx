@@ -12,8 +12,11 @@ const emptyRepository: DebtRepository = {
   getMembers: async () => [],
   createMember: async (member) => member,
   updateMember: async () => undefined,
+  deleteMember: async () => undefined,
   getTransactions: async () => [],
   createTransaction: async (transaction) => transaction,
+  updateTransaction: async (transaction) => transaction,
+  deleteTransaction: async () => undefined,
   resetMemberDebt: async () => null,
 };
 
@@ -32,15 +35,33 @@ function createMemoryRepository(
     },
     updateMember: async (member) => {
       const memberIndex = members.findIndex((storedMember) => storedMember.id === member.id);
-
       if (memberIndex >= 0) {
         members[memberIndex] = member;
       }
+    },
+    deleteMember: async (memberId) => {
+      const memberIndex = members.findIndex((m) => m.id === memberId);
+      if (memberIndex >= 0) members.splice(memberIndex, 1);
+      // cascade-delete transactions
+      const toRemove = transactions.filter((tx) => tx.memberId === memberId).map((tx) => tx.id);
+      toRemove.forEach((id) => {
+        const i = transactions.findIndex((tx) => tx.id === id);
+        if (i >= 0) transactions.splice(i, 1);
+      });
     },
     getTransactions: async () => [...transactions],
     createTransaction: async (transaction) => {
       transactions.push(transaction);
       return transaction;
+    },
+    updateTransaction: async (transaction) => {
+      const idx = transactions.findIndex((tx) => tx.id === transaction.id);
+      if (idx >= 0) transactions[idx] = transaction;
+      return transaction;
+    },
+    deleteTransaction: async (transactionId) => {
+      const idx = transactions.findIndex((tx) => tx.id === transactionId);
+      if (idx >= 0) transactions.splice(idx, 1);
     },
     resetMemberDebt: async (memberId) => {
       const balanceMinor = transactions
@@ -81,16 +102,33 @@ function createInspectableMemoryRepository(
       },
       updateMember: async (member) => {
         const memberIndex = members.findIndex((storedMember) => storedMember.id === member.id);
-
         if (memberIndex >= 0) {
           members[memberIndex] = member;
         }
+      },
+      deleteMember: async (memberId) => {
+        const i = members.findIndex((m) => m.id === memberId);
+        if (i >= 0) members.splice(i, 1);
+        const toRemove = transactions.filter((tx) => tx.memberId === memberId).map((tx) => tx.id);
+        toRemove.forEach((id) => {
+          const j = transactions.findIndex((tx) => tx.id === id);
+          if (j >= 0) transactions.splice(j, 1);
+        });
       },
       getTransactions: async () => [...transactions],
       createTransaction: async (transaction) => {
         createdTransactions.push(transaction);
         transactions.push(transaction);
         return transaction;
+      },
+      updateTransaction: async (transaction) => {
+        const idx = transactions.findIndex((tx) => tx.id === transaction.id);
+        if (idx >= 0) transactions[idx] = transaction;
+        return transaction;
+      },
+      deleteTransaction: async (transactionId) => {
+        const idx = transactions.findIndex((tx) => tx.id === transactionId);
+        if (idx >= 0) transactions.splice(idx, 1);
       },
       resetMemberDebt: async (memberId) => {
         const balanceMinor = transactions
@@ -723,6 +761,547 @@ describe("App", () => {
 
     resolveCreate();
     expect(await screen.findByRole("heading", { level: 3, name: "דני" })).toBeInTheDocument();
+  });
+
+  describe("Edit Member", () => {
+    it("shows edit button on member detail screen", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      expect(screen.getByRole("button", { name: ui.members.editName })).toBeInTheDocument();
+    });
+
+    it("opens edit form with current name pre-filled", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.editName }));
+
+      expect(screen.getByRole("form", { name: ui.members.editTitle })).toBeInTheDocument();
+      expect(screen.getByLabelText(ui.members.nameLabel)).toHaveValue("דני");
+    });
+
+    it("rejects empty name with Hebrew validation message", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.editName }));
+      const nameInput = screen.getByLabelText(ui.members.nameLabel);
+      await user.clear(nameInput);
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(ui.members.nameRequired);
+    });
+
+    it("rejects a name that duplicates another member's name", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository([createMember("member-1", "דני"), createMember("member-2", "נועה")])}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.editName }));
+      const nameInput = screen.getByLabelText(ui.members.nameLabel);
+      await user.clear(nameInput);
+      await user.type(nameInput, "נועה");
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(ui.members.duplicateName);
+    });
+
+    it("successfully renames a member and the new name appears in the detail screen", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.editName }));
+      const nameInput = screen.getByLabelText(ui.members.nameLabel);
+      await user.clear(nameInput);
+      await user.type(nameInput, "דוד");
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      expect(await screen.findByRole("heading", { level: 2, name: "דוד" })).toBeInTheDocument();
+      expect(screen.queryByRole("form", { name: ui.members.editTitle })).not.toBeInTheDocument();
+    });
+
+    it("updated name appears on the main member list after navigating back", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.editName }));
+      const nameInput = screen.getByLabelText(ui.members.nameLabel);
+      await user.clear(nameInput);
+      await user.type(nameInput, "דוד");
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      await user.click(await screen.findByRole("button", { name: ui.actions.back }));
+
+      expect(await screen.findByRole("heading", { level: 3, name: "דוד" })).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { level: 3, name: "דני" })).not.toBeInTheDocument();
+    });
+
+    it("transactions remain associated with the member after renaming", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("transaction-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.editName }));
+      const nameInput = screen.getByLabelText(ui.members.nameLabel);
+      await user.clear(nameInput);
+      await user.type(nameInput, "דוד");
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      // Transaction is still visible in history after rename
+      expect(await screen.findByRole("heading", { level: 3, name: "ארוחה" })).toBeInTheDocument();
+      // Balance label and transaction direction both use the new name
+      expect(screen.getAllByText(/דוד חייב לך/).length).toBeGreaterThan(0);
+    });
+
+    it("cancel closes the edit form without changing the name", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.editName }));
+      const nameInput = screen.getByLabelText(ui.members.nameLabel);
+      await user.clear(nameInput);
+      await user.type(nameInput, "שם אחר");
+      await user.click(screen.getByRole("button", { name: ui.actions.cancel }));
+
+      expect(screen.queryByRole("form", { name: ui.members.editTitle })).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2, name: "דני" })).toBeInTheDocument();
+    });
+
+    it("shows Hebrew error when update fails and keeps the form open", async () => {
+      const user = userEvent.setup();
+      const failingRepository: DebtRepository = {
+        ...createMemoryRepository([createMember("member-1", "דני")]),
+        updateMember: async () => {
+          throw new Error("server error");
+        },
+      };
+
+      render(<App repository={failingRepository} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.editName }));
+      const nameInput = screen.getByLabelText(ui.members.nameLabel);
+      await user.clear(nameInput);
+      await user.type(nameInput, "דוד");
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.memberUpdateFailed);
+      // Form stays open so user can retry
+      expect(screen.getByRole("form", { name: ui.members.editTitle })).toBeInTheDocument();
+    });
+  });
+
+  describe("Delete Member", () => {
+    it("shows delete member button on member detail screen", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      expect(screen.getByRole("button", { name: ui.members.deleteName })).toBeInTheDocument();
+    });
+
+    it("opens delete member confirmation dialog", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.deleteName }));
+
+      expect(screen.getByRole("dialog", { name: ui.members.deleteConfirmTitle })).toBeInTheDocument();
+      // dialog body mentions the member name
+      const dialog = screen.getByRole("dialog", { name: ui.members.deleteConfirmTitle });
+      expect(dialog.textContent).toContain("דני");
+    });
+
+    it("cancel closes dialog without deleting the member", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.deleteName }));
+      await user.click(screen.getByRole("button", { name: ui.actions.cancel }));
+
+      expect(screen.queryByRole("dialog", { name: ui.members.deleteConfirmTitle })).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2, name: "דני" })).toBeInTheDocument();
+    });
+
+    it("confirm deletes member and navigates back to main screen", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.deleteName }));
+      await user.click(screen.getByRole("button", { name: ui.members.deleteConfirm }));
+
+      // After deletion, should navigate back to main screen with member gone
+      expect(await screen.findByRole("heading", { level: 2, name: ui.home.quickActionTitle })).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { level: 3, name: "דני" })).not.toBeInTheDocument();
+    });
+
+    it("shows Hebrew error when deletion fails and keeps dialog open", async () => {
+      const user = userEvent.setup();
+      const failingRepository: DebtRepository = {
+        ...createMemoryRepository([createMember("member-1", "דני")]),
+        deleteMember: async () => {
+          throw new Error("server error");
+        },
+      };
+
+      render(<App repository={failingRepository} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.deleteName }));
+      await user.click(screen.getByRole("button", { name: ui.members.deleteConfirm }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.memberDeleteFailed);
+      expect(screen.getByRole("dialog", { name: ui.members.deleteConfirmTitle })).toBeInTheDocument();
+    });
+  });
+
+  describe("Edit Transaction", () => {
+    it("shows edit and delete buttons on each transaction card", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      const txCard = within(history).getAllByRole("article")[0];
+      expect(within(txCard).getByRole("button", { name: ui.actions.edit })).toBeInTheDocument();
+      expect(within(txCard).getByRole("button", { name: ui.actions.delete })).toBeInTheDocument();
+    });
+
+    it("opens inline edit form with pre-filled values", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [
+              createTransaction("tx-1", "member-1", 5000, "member_owes_user", {
+                title: "ארוחה",
+                transactionDate: "2026-05-20",
+              }),
+            ],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.edit }));
+
+      expect(screen.getByRole("form", { name: ui.transaction.editTransactionTitle })).toBeInTheDocument();
+      expect(screen.getByLabelText(ui.transaction.amountLabel)).toHaveValue("50");
+      expect(screen.getByLabelText(ui.transaction.reasonLabel)).toHaveValue("ארוחה");
+    });
+
+    it("saves edited transaction and updates balance", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.edit }));
+
+      const amountInput = screen.getByLabelText(ui.transaction.amountLabel);
+      await user.clear(amountInput);
+      await user.type(amountInput, "100");
+      const titleInput = screen.getByLabelText(ui.transaction.reasonLabel);
+      await user.clear(titleInput);
+      await user.type(titleInput, "ארוחת ערב");
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      expect(await screen.findByRole("heading", { level: 3, name: "ארוחת ערב" })).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { level: 3, name: "ארוחה" })).not.toBeInTheDocument();
+      // Balance updated: ₪100 instead of ₪50
+      expect(screen.getAllByText(/דני חייב לך/).some((el) => el.textContent?.includes("100.00"))).toBe(true);
+    });
+
+    it("cancel closes the edit form without saving", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.edit }));
+      await user.click(screen.getByRole("button", { name: ui.actions.cancel }));
+
+      expect(screen.queryByRole("form", { name: ui.transaction.editTransactionTitle })).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 3, name: "ארוחה" })).toBeInTheDocument();
+    });
+
+    it("shows Hebrew error when transaction update fails and keeps edit form open", async () => {
+      const user = userEvent.setup();
+      const failingRepository: DebtRepository = {
+        ...createMemoryRepository(
+          [createMember("member-1", "דני")],
+          [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+        ),
+        updateTransaction: async () => {
+          throw new Error("server error");
+        },
+      };
+
+      render(<App repository={failingRepository} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.edit }));
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.transactionUpdateFailed);
+      expect(screen.getByRole("form", { name: ui.transaction.editTransactionTitle })).toBeInTheDocument();
+    });
+  });
+
+  describe("Delete Transaction", () => {
+    it("opens delete transaction confirmation dialog", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.delete }));
+
+      expect(
+        screen.getByRole("dialog", { name: ui.transaction.deleteTransactionConfirmTitle }),
+      ).toBeInTheDocument();
+    });
+
+    it("cancel closes dialog without deleting the transaction", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.delete }));
+      await user.click(screen.getByRole("button", { name: ui.actions.cancel }));
+
+      expect(
+        screen.queryByRole("dialog", { name: ui.transaction.deleteTransactionConfirmTitle }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 3, name: "ארוחה" })).toBeInTheDocument();
+    });
+
+    it("confirms deletion and removes transaction from history while updating balance", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.delete }));
+      const deleteTxDialog = screen.getByRole("dialog", { name: ui.transaction.deleteTransactionConfirmTitle });
+      await user.click(within(deleteTxDialog).getByRole("button", { name: ui.transaction.deleteTransactionConfirm }));
+
+      expect(await screen.findByText(ui.transaction.historyEmpty)).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { level: 3, name: "ארוחה" })).not.toBeInTheDocument();
+      expect(screen.getByText("אין חוב פתוח מול דני")).toBeInTheDocument();
+    });
+
+    it("shows Hebrew error when deletion fails and keeps dialog open", async () => {
+      const user = userEvent.setup();
+      const failingRepository: DebtRepository = {
+        ...createMemoryRepository(
+          [createMember("member-1", "דני")],
+          [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+        ),
+        deleteTransaction: async () => {
+          throw new Error("server error");
+        },
+      };
+
+      render(<App repository={failingRepository} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.delete }));
+      const deleteTxDialog2 = screen.getByRole("dialog", { name: ui.transaction.deleteTransactionConfirmTitle });
+      await user.click(
+        within(deleteTxDialog2).getByRole("button", { name: ui.transaction.deleteTransactionConfirm }),
+      );
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.transactionDeleteFailed);
+      expect(
+        screen.getByRole("dialog", { name: ui.transaction.deleteTransactionConfirmTitle }),
+      ).toBeInTheDocument();
+    });
   });
 
   it("disables confirm button during reset to prevent duplicate submissions", async () => {

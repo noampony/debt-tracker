@@ -1058,7 +1058,7 @@ Added `loadError`, `memberCreateError`, `transactionCreateError`, `resetError` s
 
 ## 11.1 Edit Member
 
-* [ ] Implement edit member name.
+* [x] Implement edit member name.
 
 Description:
 Allow correcting a member's name.
@@ -1070,11 +1070,13 @@ Definition of Done:
 * Updated name appears across the app.
 * Existing transactions remain associated with the member.
 
+Implemented: "שינוי שם" button on member detail screen opens an inline edit form with the current name pre-filled. Validates empty/whitespace (`יש להזין שם`) and duplicate names (`איש קשר בשם הזה כבר קיים`) against other members. Calls `repository.updateMember` then updates local React state. Transactions remain associated via `memberId` which never changes. 8 tests added to `src/tests/App.test.tsx`.
+
 ---
 
 ## 11.2 Optional Transaction Maintenance
 
-* [ ] Decide whether transaction editing is included before deployment.
+* [x] Decide whether transaction editing is included before deployment.
 
 Description:
 Transaction editing is not part of the original MVP, but a deploy-ready app may need correction flows.
@@ -1087,7 +1089,9 @@ Definition of Done:
 
 * If included, implementation tasks are added for edit validation, audit behavior, and tests.
 
-* [ ] Decide whether transaction deletion is included before deployment.
+**Decision: NOT included before deployment.** Transaction editing is out of scope for Phase 1 per the spec. Users who entered a wrong amount can add a correction transaction in the opposite direction. Full decision rationale documented in `docs/ARCHITECTURE.md` (Section 11 — Transaction Maintenance Decisions).
+
+* [x] Decide whether transaction deletion is included before deployment.
 
 Description:
 Transaction deletion is potentially destructive and should be handled carefully.
@@ -1097,6 +1101,8 @@ Definition of Done:
 * Product decision is documented.
 * If omitted, user has a reasonable alternative such as adding a correction transaction.
 * If included, deletion requires confirmation and tests.
+
+**Decision: NOT included before deployment.** Preserving transaction history is a core design principle. Users can add correction transactions to cancel unwanted amounts. Full decision rationale documented in `docs/ARCHITECTURE.md` (Section 11 — Transaction Maintenance Decisions).
 
 ---
 

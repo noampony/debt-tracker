@@ -95,6 +95,45 @@ The reset endpoint (`POST /api/members/:memberId/reset`):
 
 ---
 
+## Section 11 — Transaction Maintenance Decisions
+
+### 11.2a Transaction Editing
+
+**Decision: Not included before deployment.**
+
+Reasoning:
+- Transaction editing is explicitly out of scope for Phase 1 (see `docs/SPECS.md`, section 4.2.4).
+- The core design principle is auditability and history preservation.
+- Editing would silently change historical records, making the audit trail unreliable.
+
+Intended alternative:
+- Users who entered a wrong amount can add a **correction transaction** (e.g., if they over-recorded ₪100, they add a `user_owes_member` transaction for ₪100 to cancel it, then add the correct amount).
+- The "Reset Debt" flow provides a one-tap way to zero out and re-enter correct totals.
+
+If implemented in a future version:
+- Editing must update the member balance atomically on the backend.
+- The transaction must record an `updatedAt` timestamp so history is auditable.
+- Tests must cover edit validation, balance recalculation, and audit trail preservation.
+
+### 11.2b Transaction Deletion
+
+**Decision: Not included before deployment.**
+
+Reasoning:
+- Deletion is explicitly out of scope for Phase 1 (see `docs/SPECS.md`, section 4.2.5).
+- Permanently removing records contradicts the core design goal of preserving a full debt history.
+
+Intended alternative:
+- Users who want to remove the effect of a transaction can add a **correction transaction** in the opposite direction for the same amount.
+- The "Reset Debt" flow provides a clean slate with history preserved.
+
+If implemented in a future version:
+- Deletion must require a confirmation dialog.
+- Consider soft-delete (marking the transaction as deleted) rather than permanent removal.
+- Tests must cover the confirmation flow, balance recalculation after deletion, and the soft-delete audit trail.
+
+---
+
 ## Authentication
 
 - Users register with email + password.

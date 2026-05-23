@@ -49,4 +49,23 @@ export const createTransactionSchema = z.object({
   type: z.enum(VALID_TYPES).default("manual"),
 });
 
+/** Update schema — memberId and type are not changeable after creation. */
+export const updateTransactionSchema = z.object({
+  amountMinor: z
+    .number()
+    .int("Amount must be a whole number")
+    .positive("Amount must be greater than zero"),
+  direction: z.enum(VALID_DIRECTIONS, {
+    error: "Direction must be member_owes_user or user_owes_member",
+  }),
+  title: z
+    .string()
+    .min(1, "Title is required")
+    .max(500, "Title is too long"),
+  notes: z.string().max(2000, "Notes are too long").optional(),
+  transactionDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+});
+
 

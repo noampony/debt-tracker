@@ -89,6 +89,29 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [resetError, setResetError] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const [isEditMemberOpen, setIsEditMemberOpen] = useState(false);
+  const [editMemberName, setEditMemberName] = useState("");
+  const [editMemberNameError, setEditMemberNameError] = useState("");
+  const [editMemberSaveError, setEditMemberSaveError] = useState("");
+  const [isSavingEditMember, setIsSavingEditMember] = useState(false);
+  // Delete member
+  const [isDeleteMemberDialogOpen, setIsDeleteMemberDialogOpen] = useState(false);
+  const [isDeletingMember, setIsDeletingMember] = useState(false);
+  const [deleteMemberError, setDeleteMemberError] = useState("");
+  // Edit transaction
+  const [editingTransactionId, setEditingTransactionId] = useState("");
+  const [editTransactionAmount, setEditTransactionAmount] = useState("");
+  const [editTransactionDirection, setEditTransactionDirection] = useState<TransactionDirection>("member_owes_user");
+  const [editTransactionTitle, setEditTransactionTitle] = useState("");
+  const [editTransactionDate, setEditTransactionDate] = useState("");
+  const [editTransactionNotes, setEditTransactionNotes] = useState("");
+  const [editTransactionErrors, setEditTransactionErrors] = useState<TransactionFormErrors>({});
+  const [editTransactionSaveError, setEditTransactionSaveError] = useState("");
+  const [isSavingEditTransaction, setIsSavingEditTransaction] = useState(false);
+  // Delete transaction
+  const [deleteTransactionId, setDeleteTransactionId] = useState("");
+  const [isDeletingTransaction, setIsDeletingTransaction] = useState(false);
+  const [deleteTransactionError, setDeleteTransactionError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -204,6 +227,204 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
       amountInputRef.current?.focus();
     }
   }, [isTransactionFormOpen, transactionMemberId]);
+
+  // Reset edit-member form state whenever the selected member changes.
+  useEffect(() => {
+    setIsEditMemberOpen(false);
+    setEditMemberName("");
+    setEditMemberNameError("");
+    setEditMemberSaveError("");
+    setIsDeleteMemberDialogOpen(false);
+    setDeleteMemberError("");
+    setEditingTransactionId("");
+    setEditTransactionSaveError("");
+    setDeleteTransactionId("");
+    setDeleteTransactionError("");
+  }, [selectedMemberId]);
+
+  function openEditMemberForm() {
+    if (!selectedMember) return;
+    setEditMemberName(selectedMember.name);
+    setEditMemberNameError("");
+    setEditMemberSaveError("");
+    setIsEditMemberOpen(true);
+  }
+
+  function closeEditMemberForm() {
+    setIsEditMemberOpen(false);
+    setEditMemberName("");
+    setEditMemberNameError("");
+    setEditMemberSaveError("");
+  }
+
+  async function handleEditMemberSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedMember || isSavingEditMember) return;
+
+    const trimmedName = editMemberName.trim();
+
+    if (!trimmedName) {
+      setEditMemberNameError(ui.members.nameRequired);
+      return;
+    }
+
+    const hasDuplicateName = members.some(
+      (member) => member.id !== selectedMember.id && member.name.trim() === trimmedName,
+    );
+
+    if (hasDuplicateName) {
+      setEditMemberNameError(ui.members.duplicateName);
+      return;
+    }
+
+    setIsSavingEditMember(true);
+    setEditMemberSaveError("");
+
+    const now = new Date().toISOString();
+    const updatedMember: Member = {
+      ...selectedMember,
+      name: trimmedName,
+      updatedAt: now,
+    };
+
+    try {
+      await repository.updateMember(updatedMember);
+      setMembers((currentMembers) =>
+        currentMembers.map((member) => (member.id === updatedMember.id ? updatedMember : member)),
+      );
+      closeEditMemberForm();
+    } catch {
+      setEditMemberSaveError(ui.error.memberUpdateFailed);
+    } finally {
+      setIsSavingEditMember(false);
+    }
+  }
+
+  // ── Delete Member ──────────────────────────────────────────────────────────
+
+  function openDeleteMemberDialog() {
+    setIsDeleteMemberDialogOpen(true);
+    setDeleteMemberError("");
+  }
+
+  function closeDeleteMemberDialog() {
+    setIsDeleteMemberDialogOpen(false);
+    setDeleteMemberError("");
+  }
+
+  async function handleConfirmDeleteMember() {
+    if (!selectedMember || isDeletingMember) return;
+
+    setIsDeletingMember(true);
+    setDeleteMemberError("");
+
+    try {
+      await repository.deleteMember(selectedMember.id);
+      setMembers((current) => current.filter((m) => m.id !== selectedMember.id));
+      setTransactions((current) => current.filter((tx) => tx.memberId !== selectedMember.id));
+      setSelectedMemberId(""); // navigate back to main screen
+    } catch {
+      setDeleteMemberError(ui.error.memberDeleteFailed);
+      setIsDeletingMember(false);
+    }
+  }
+
+  // ── Edit Transaction ───────────────────────────────────────────────────────
+
+  function openEditTransaction(transaction: Transaction) {
+    setEditingTransactionId(transaction.id);
+    setEditTransactionAmount(String(transaction.amountMinor / 100));
+    setEditTransactionDirection(transaction.direction);
+    setEditTransactionTitle(transaction.title);
+    setEditTransactionDate(transaction.transactionDate);
+    setEditTransactionNotes(transaction.notes ?? "");
+    setEditTransactionErrors({});
+    setEditTransactionSaveError("");
+  }
+
+  function closeEditTransaction() {
+    setEditingTransactionId("");
+    setEditTransactionAmount("");
+    setEditTransactionDirection("member_owes_user");
+    setEditTransactionTitle("");
+    setEditTransactionDate("");
+    setEditTransactionNotes("");
+    setEditTransactionErrors({});
+    setEditTransactionSaveError("");
+  }
+
+  async function handleEditTransactionSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isSavingEditTransaction) return;
+
+    const transaction = transactions.find((tx) => tx.id === editingTransactionId);
+    if (!transaction) return;
+
+    const trimmedTitle = editTransactionTitle.trim();
+    const errors: TransactionFormErrors = {
+      amount: validateTransactionAmount(editTransactionAmount),
+      title: trimmedTitle ? undefined : ui.transaction.reasonRequired,
+      transactionDate: editTransactionDate ? undefined : ui.transaction.dateRequired,
+    };
+    const amountMinor = parseIlsInputToMinor(editTransactionAmount);
+
+    setEditTransactionErrors(errors);
+
+    if (Object.values(errors).some(Boolean) || amountMinor === null) return;
+
+    setIsSavingEditTransaction(true);
+    setEditTransactionSaveError("");
+
+    const now = new Date().toISOString();
+    const updatedTransaction: Transaction = {
+      ...transaction,
+      amountMinor,
+      direction: editTransactionDirection,
+      title: trimmedTitle,
+      notes: editTransactionNotes.trim() || undefined,
+      transactionDate: editTransactionDate,
+      updatedAt: now,
+    };
+
+    try {
+      const saved = await repository.updateTransaction(updatedTransaction);
+      setTransactions((current) => current.map((tx) => (tx.id === saved.id ? saved : tx)));
+      closeEditTransaction();
+    } catch {
+      setEditTransactionSaveError(ui.error.transactionUpdateFailed);
+    } finally {
+      setIsSavingEditTransaction(false);
+    }
+  }
+
+  // ── Delete Transaction ─────────────────────────────────────────────────────
+
+  function openDeleteTransactionDialog(transactionId: string) {
+    setDeleteTransactionId(transactionId);
+    setDeleteTransactionError("");
+  }
+
+  function closeDeleteTransactionDialog() {
+    setDeleteTransactionId("");
+    setDeleteTransactionError("");
+  }
+
+  async function handleConfirmDeleteTransaction() {
+    if (!deleteTransactionId || isDeletingTransaction) return;
+
+    setIsDeletingTransaction(true);
+    setDeleteTransactionError("");
+
+    try {
+      await repository.deleteTransaction(deleteTransactionId);
+      setTransactions((current) => current.filter((tx) => tx.id !== deleteTransactionId));
+      closeDeleteTransactionDialog();
+    } catch {
+      setDeleteTransactionError(ui.error.transactionDeleteFailed);
+    } finally {
+      setIsDeletingTransaction(false);
+    }
+  }
 
   function closeAddMemberForm() {
     setIsAddMemberOpen(false);
@@ -568,6 +789,177 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     );
   }
 
+  function renderDeleteMemberDialog() {
+    if (!selectedMember || !isDeleteMemberDialogOpen) return null;
+    const dialogBody = ui.members.deleteConfirmBody.replace("{memberName}", selectedMember.name);
+    return (
+      <div className="dialog-backdrop" role="presentation">
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-member-dialog-title">
+          <Card className="dialog-card">
+            <h3 id="delete-member-dialog-title">{ui.members.deleteConfirmTitle}</h3>
+            <p>{dialogBody}</p>
+            {deleteMemberError && (
+              <p className="field-error" role="alert">
+                {deleteMemberError}
+              </p>
+            )}
+            <div className="button-row">
+              <Button type="button" variant="ghost" onClick={closeDeleteMemberDialog} disabled={isDeletingMember}>
+                {ui.actions.cancel}
+              </Button>
+              <Button type="button" variant="danger" onClick={handleConfirmDeleteMember} disabled={isDeletingMember}>
+                {isDeletingMember ? ui.loading.deletingMember : ui.members.deleteConfirm}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  function renderDeleteTransactionDialog() {
+    if (!deleteTransactionId) return null;
+    return (
+      <div className="dialog-backdrop" role="presentation">
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-tx-dialog-title">
+          <Card className="dialog-card">
+            <h3 id="delete-tx-dialog-title">{ui.transaction.deleteTransactionConfirmTitle}</h3>
+            <p>{ui.transaction.deleteTransactionConfirmBody}</p>
+            {deleteTransactionError && (
+              <p className="field-error" role="alert">
+                {deleteTransactionError}
+              </p>
+            )}
+            <div className="button-row">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={closeDeleteTransactionDialog}
+                disabled={isDeletingTransaction}
+              >
+                {ui.actions.cancel}
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleConfirmDeleteTransaction}
+                disabled={isDeletingTransaction}
+              >
+                {isDeletingTransaction ? ui.loading.deletingTransaction : ui.transaction.deleteTransactionConfirm}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  function renderEditTransactionForm(transaction: Transaction) {
+    return (
+      <Card key={transaction.id} className="transaction-card">
+        <form
+          className="form-stack"
+          aria-labelledby={`edit-tx-title-${transaction.id}`}
+          onSubmit={handleEditTransactionSubmit}
+        >
+          <div className="form-heading">
+            <h3 id={`edit-tx-title-${transaction.id}`}>{ui.transaction.editTransactionTitle}</h3>
+          </div>
+          <TextInput
+            label={ui.transaction.amountLabel}
+            value={editTransactionAmount}
+            inputMode="decimal"
+            autoComplete="off"
+            dir="ltr"
+            placeholder={ui.transaction.amountPlaceholder}
+            onChange={(event) => {
+              setEditTransactionAmount(event.target.value);
+              setEditTransactionErrors((e) => ({ ...e, amount: undefined }));
+            }}
+            aria-invalid={editTransactionErrors.amount ? "true" : "false"}
+            aria-describedby={editTransactionErrors.amount ? "edit-tx-amount-error" : undefined}
+            autoFocus
+          />
+          {editTransactionErrors.amount && (
+            <p className="field-error" id="edit-tx-amount-error" role="alert">
+              {editTransactionErrors.amount}
+            </p>
+          )}
+          <fieldset className="field radio-group">
+            <legend>{ui.transaction.directionLabel}</legend>
+            <label>
+              <input
+                type="radio"
+                name="edit-tx-direction"
+                value="member_owes_user"
+                checked={editTransactionDirection === "member_owes_user"}
+                onChange={() => setEditTransactionDirection("member_owes_user")}
+              />
+              <span>{ui.transaction.memberOwesUserLabel}</span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="edit-tx-direction"
+                value="user_owes_member"
+                checked={editTransactionDirection === "user_owes_member"}
+                onChange={() => setEditTransactionDirection("user_owes_member")}
+              />
+              <span>{ui.transaction.userOwesMemberLabel}</span>
+            </label>
+          </fieldset>
+          <TextInput
+            label={ui.transaction.reasonLabel}
+            value={editTransactionTitle}
+            placeholder={ui.transaction.reasonPlaceholder}
+            onChange={(event) => {
+              setEditTransactionTitle(event.target.value);
+              setEditTransactionErrors((e) => ({ ...e, title: undefined }));
+            }}
+            aria-invalid={editTransactionErrors.title ? "true" : "false"}
+            aria-describedby={editTransactionErrors.title ? "edit-tx-title-error" : undefined}
+          />
+          {editTransactionErrors.title && (
+            <p className="field-error" id="edit-tx-title-error" role="alert">
+              {editTransactionErrors.title}
+            </p>
+          )}
+          <TextInput
+            label={ui.transaction.dateLabel}
+            type="date"
+            value={editTransactionDate}
+            onChange={(event) => {
+              setEditTransactionDate(event.target.value);
+              setEditTransactionErrors((e) => ({ ...e, transactionDate: undefined }));
+            }}
+          />
+          <label className="field" htmlFor={`edit-tx-notes-${transaction.id}`}>
+            <span>{ui.transaction.notesLabel}</span>
+            <textarea
+              id={`edit-tx-notes-${transaction.id}`}
+              value={editTransactionNotes}
+              placeholder={ui.transaction.notesPlaceholder}
+              onChange={(event) => setEditTransactionNotes(event.target.value)}
+            />
+          </label>
+          {editTransactionSaveError && (
+            <p className="field-error" role="alert">
+              {editTransactionSaveError}
+            </p>
+          )}
+          <div className="button-row">
+            <Button type="submit" disabled={isSavingEditTransaction}>
+              {isSavingEditTransaction ? ui.loading.savingEditTransaction : ui.actions.save}
+            </Button>
+            <Button type="button" variant="ghost" onClick={closeEditTransaction} disabled={isSavingEditTransaction}>
+              {ui.actions.cancel}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    );
+  }
+
   if (selectedMember) {
     const isResetDisabled = selectedMemberBalanceMinor === 0;
 
@@ -578,33 +970,80 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
             {ui.actions.back}
           </Button>
           <Card className="member-detail-card">
-            <p className="eyebrow">{ui.members.detailTitle}</p>
-            <h2 id="member-detail-title">{selectedMember.name}</h2>
-            <div className="balance-panel">
-              <p className="summary-label">{ui.members.currentBalance}</p>
-              <p>{formatMemberBalance(selectedMember, selectedMemberBalanceMinor)}</p>
-            </div>
-            <div className="button-row detail-actions">
-              <Button type="button" onClick={() => openTransactionForm(selectedMember.id)}>
-                {ui.actions.addTransaction}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={isResetDisabled}
-                onClick={openResetDialog}
-                aria-describedby="reset-debt-helper"
-              >
-                {ui.members.resetDebt}
-              </Button>
-            </div>
-            <p className="helper-text" id="reset-debt-helper">
-              {isResetDisabled ? ui.members.resetDisabled : ui.members.resetHelp}
-            </p>
+            {isEditMemberOpen ? (
+              <form className="form-stack" aria-labelledby="member-detail-title" onSubmit={handleEditMemberSubmit}>
+                <div className="form-heading">
+                  <h2 id="member-detail-title">{ui.members.editTitle}</h2>
+                </div>
+                <TextInput
+                  label={ui.members.nameLabel}
+                  value={editMemberName}
+                  onChange={(event) => {
+                    setEditMemberName(event.target.value);
+                    setEditMemberNameError("");
+                  }}
+                  aria-invalid={editMemberNameError ? "true" : "false"}
+                  aria-describedby={editMemberNameError ? "edit-member-name-error" : undefined}
+                  autoFocus
+                />
+                {editMemberNameError && (
+                  <p className="field-error" id="edit-member-name-error" role="alert">
+                    {editMemberNameError}
+                  </p>
+                )}
+                {editMemberSaveError && (
+                  <p className="field-error" role="alert">
+                    {editMemberSaveError}
+                  </p>
+                )}
+                <div className="button-row">
+                  <Button type="submit" disabled={isSavingEditMember}>
+                    {isSavingEditMember ? ui.loading.savingMember : ui.actions.save}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={closeEditMemberForm} disabled={isSavingEditMember}>
+                    {ui.actions.cancel}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p className="eyebrow">{ui.members.detailTitle}</p>
+                <h2 id="member-detail-title">{selectedMember.name}</h2>
+                <div className="balance-panel">
+                  <p className="summary-label">{ui.members.currentBalance}</p>
+                  <p>{formatMemberBalance(selectedMember, selectedMemberBalanceMinor)}</p>
+                </div>
+                <div className="button-row detail-actions">
+                  <Button type="button" onClick={() => openTransactionForm(selectedMember.id)}>
+                    {ui.actions.addTransaction}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isResetDisabled}
+                    onClick={openResetDialog}
+                    aria-describedby="reset-debt-helper"
+                  >
+                    {ui.members.resetDebt}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={openEditMemberForm}>
+                    {ui.members.editName}
+                  </Button>
+                  <Button type="button" variant="danger" onClick={openDeleteMemberDialog}>
+                    {ui.members.deleteName}
+                  </Button>
+                </div>
+                <p className="helper-text" id="reset-debt-helper">
+                  {isResetDisabled ? ui.members.resetDisabled : ui.members.resetHelp}
+                </p>
+              </>
+            )}
           </Card>
         </section>
 
         {renderResetDialog()}
+        {renderDeleteMemberDialog()}
+        {renderDeleteTransactionDialog()}
 
         {renderTransactionForm()}
 
@@ -614,37 +1053,53 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
           </div>
           <div className="card-list history-list">
             {selectedMemberTransactions.length === 0 && <p className="empty-state">{ui.transaction.historyEmpty}</p>}
-            {selectedMemberTransactions.map((transaction) => (
-              <Card key={transaction.id} className="transaction-card">
-                <div className="transaction-card-header">
-                  <div>
-                    <h3>{transaction.title}</h3>
-                    <p>{formatTransactionDirection(selectedMember, transaction)}</p>
-                  </div>
-                  <p className="transaction-amount">{formatIls(transaction.amountMinor)}</p>
-                </div>
-                <dl className="transaction-meta">
-                  <div>
-                    <dt>{ui.transaction.dateLabelShort}</dt>
-                    <dd>{formatDate(transaction.transactionDate) || transaction.transactionDate}</dd>
-                  </div>
-                  <div>
-                    <dt>{ui.transaction.amountLabelShort}</dt>
-                    <dd>{formatIls(transaction.amountMinor)}</dd>
-                  </div>
-                  <div>
-                    <dt>{ui.transaction.reasonLabelShort}</dt>
-                    <dd>{transaction.title}</dd>
-                  </div>
-                  {transaction.notes && (
-                    <div className="transaction-notes">
-                      <dt>{ui.transaction.notesLabelShort}</dt>
-                      <dd>{transaction.notes}</dd>
+            {selectedMemberTransactions.map((transaction) =>
+              editingTransactionId === transaction.id ? (
+                renderEditTransactionForm(transaction)
+              ) : (
+                <Card key={transaction.id} className="transaction-card">
+                  <div className="transaction-card-header">
+                    <div>
+                      <h3>{transaction.title}</h3>
+                      <p>{formatTransactionDirection(selectedMember, transaction)}</p>
                     </div>
-                  )}
-                </dl>
-              </Card>
-            ))}
+                    <p className="transaction-amount">{formatIls(transaction.amountMinor)}</p>
+                  </div>
+                  <dl className="transaction-meta">
+                    <div>
+                      <dt>{ui.transaction.dateLabelShort}</dt>
+                      <dd>{formatDate(transaction.transactionDate) || transaction.transactionDate}</dd>
+                    </div>
+                    <div>
+                      <dt>{ui.transaction.amountLabelShort}</dt>
+                      <dd>{formatIls(transaction.amountMinor)}</dd>
+                    </div>
+                    <div>
+                      <dt>{ui.transaction.reasonLabelShort}</dt>
+                      <dd>{transaction.title}</dd>
+                    </div>
+                    {transaction.notes && (
+                      <div className="transaction-notes">
+                        <dt>{ui.transaction.notesLabelShort}</dt>
+                        <dd>{transaction.notes}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <div className="button-row transaction-card-actions">
+                    <Button type="button" variant="ghost" onClick={() => openEditTransaction(transaction)}>
+                      {ui.actions.edit}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={() => openDeleteTransactionDialog(transaction.id)}
+                    >
+                      {ui.actions.delete}
+                    </Button>
+                  </div>
+                </Card>
+              ),
+            )}
           </div>
         </section>
       </AppShell>

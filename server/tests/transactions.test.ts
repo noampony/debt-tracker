@@ -141,6 +141,114 @@ describe("POST /api/transactions", () => {
   });
 });
 
+describe("PATCH /api/transactions/:id", () => {
+  it("updates editable fields of a transaction", async () => {
+    const { token } = await createTestUser(app);
+    const member = await createTestMember(app, token);
+    const createRes = await createTestTransaction(app, token, member.id, {
+      amountMinor: 5000,
+      title: "Original title",
+      transactionDate: "2026-01-01",
+    });
+    const txId = createRes.body.id as string;
+
+    const res = await request(app)
+      .patch(`/api/transactions/${txId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        amountMinor: 9999,
+        direction: "user_owes_member",
+        title: "Updated title",
+        transactionDate: "2026-06-01",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.amountMinor).toBe(9999);
+    expect(res.body.direction).toBe("user_owes_member");
+    expect(res.body.title).toBe("Updated title");
+    expect(res.body.transactionDate).toBe("2026-06-01");
+    // type and memberId remain unchanged
+    expect(res.body.type).toBe("manual");
+    expect(res.body.memberId).toBe(member.id);
+  });
+
+  it("rejects an invalid update (zero amount)", async () => {
+    const { token } = await createTestUser(app);
+    const member = await createTestMember(app, token);
+    const createRes = await createTestTransaction(app, token, member.id);
+    const txId = createRes.body.id as string;
+
+    const res = await request(app)
+      .patch(`/api/transactions/${txId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        amountMinor: 0,
+        direction: "member_owes_user",
+        title: "Test",
+        transactionDate: "2026-01-01",
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 when updating another user's transaction", async () => {
+    const { token: token1 } = await createTestUser(app, "user1@test.com");
+    const { token: token2 } = await createTestUser(app, "user2@test.com");
+
+    const member = await createTestMember(app, token1);
+    const createRes = await createTestTransaction(app, token1, member.id);
+    const txId = createRes.body.id as string;
+
+    const res = await request(app)
+      .patch(`/api/transactions/${txId}`)
+      .set("Authorization", `Bearer ${token2}`)
+      .send({
+        amountMinor: 1000,
+        direction: "member_owes_user",
+        title: "Hack",
+        transactionDate: "2026-01-01",
+      });
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("DELETE /api/transactions/:id", () => {
+  it("deletes a transaction", async () => {
+    const { token } = await createTestUser(app);
+    const member = await createTestMember(app, token);
+    const createRes = await createTestTransaction(app, token, member.id);
+    const txId = createRes.body.id as string;
+
+    const res = await request(app)
+      .delete(`/api/transactions/${txId}`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(204);
+
+    // Confirm transaction is gone
+    const listRes = await request(app)
+      .get(`/api/members/${member.id}/transactions`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(listRes.body).toHaveLength(0);
+  });
+
+  it("returns 404 when deleting another user's transaction", async () => {
+    const { token: token1 } = await createTestUser(app, "user1@test.com");
+    const { token: token2 } = await createTestUser(app, "user2@test.com");
+
+    const member = await createTestMember(app, token1);
+    const createRes = await createTestTransaction(app, token1, member.id);
+    const txId = createRes.body.id as string;
+
+    const res = await request(app)
+      .delete(`/api/transactions/${txId}`)
+      .set("Authorization", `Bearer ${token2}`);
+
+    expect(res.status).toBe(404);
+  });
+});
+
 describe("GET /api/members/:memberId/transactions", () => {
   it("returns transactions for a member sorted newest-first", async () => {
     const { token } = await createTestUser(app);
