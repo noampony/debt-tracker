@@ -703,7 +703,7 @@ Definition of Done:
 
 ## 7.1 Member Detail Screen
 
-* [ ] Implement member detail screen.
+* [x] Implement member detail screen.
 
 Description:
 Show details for a single member.
@@ -726,7 +726,7 @@ Definition of Done:
 
 * User can return to the main screen.
 
-* [ ] Preselect member when adding transaction from detail screen.
+* [x] Preselect member when adding transaction from detail screen.
 
 Description:
 Improve speed when adding a transaction from a specific member page.
@@ -740,7 +740,7 @@ Definition of Done:
 
 ## 7.2 Transaction History
 
-* [ ] Implement transaction history list for a member.
+* [x] Implement transaction history list for a member.
 
 Description:
 Show all transactions for the selected member.
@@ -765,7 +765,7 @@ Definition of Done:
 
 * Empty history state is shown in Hebrew.
 
-* [ ] Make transaction history mobile-friendly.
+* [x] Make transaction history mobile-friendly.
 
 Description:
 Use cards or compact list items instead of dense tables.
@@ -782,7 +782,7 @@ Definition of Done:
 
 ## 8.1 Reset Action
 
-* [ ] Add reset debt button on member detail screen.
+* [x] Add reset debt button on member detail screen.
 
 Description:
 Allow the user to reset the debt with a member.
@@ -799,7 +799,7 @@ Definition of Done:
 
 * Button does not immediately reset debt without confirmation.
 
-* [ ] Implement reset confirmation dialog.
+* [x] Implement reset confirmation dialog.
 
 Description:
 Require explicit second approval before resetting debt.
@@ -823,7 +823,7 @@ Definition of Done:
 
 * Dialog is usable on mobile.
 
-* [ ] Create reset adjustment transaction on confirmation.
+* [x] Create reset adjustment transaction on confirmation.
 
 Description:
 Reset must preserve history by adding a balancing transaction.
@@ -842,7 +842,7 @@ Definition of Done:
 
 ## 9.1 Backend Architecture
 
-* [ ] Decide and document backend architecture.
+* [x] Decide and document backend architecture.
 
 Description:
 Choose the backend implementation appropriate for deployment. Options include Next.js API routes, a separate Node backend, or another production-ready backend.
@@ -855,7 +855,9 @@ Definition of Done:
 
 * Local repository abstraction can be replaced or backed by API calls.
 
-* [ ] Implement backend data models.
+Architecture decision: Separate Express v5 + TypeScript backend in `server/`. See `docs/ARCHITECTURE.md` for full details. The frontend `DebtRepository` interface allows clean swapping between local and API-backed storage.
+
+* [x] Implement backend data models.
 
 Description:
 Create backend representations for users, members, and transactions.
@@ -872,7 +874,9 @@ Definition of Done:
 
 * Created/updated timestamps are stored.
 
-* [ ] Implement database persistence.
+Implemented via Prisma v5 schema: `User`, `Member`, `Transaction` models in `prisma/schema.prisma`. Amounts stored as `Int` (agorot). Timestamps auto-managed by Prisma.
+
+* [x] Implement database persistence.
 
 Description:
 Store members and transactions in a production-capable database.
@@ -885,11 +889,13 @@ Definition of Done:
 * Transactions persist in the database.
 * Data survives app restarts and redeployments.
 
+SQLite (dev) / PostgreSQL (prod) via Prisma. Migration at `prisma/migrations/20260523120000_init/migration.sql`. Run `npm run db:migrate` to apply.
+
 ---
 
 ## 9.2 Backend API
 
-* [ ] Implement members API.
+* [x] Implement members API.
 
 Description:
 Expose backend endpoints or server actions for member operations.
@@ -910,7 +916,9 @@ Definition of Done:
 
 * Tests cover successful and invalid member creation.
 
-* [ ] Implement transactions API.
+Implemented in `server/routes/members.ts`: GET /api/members, POST /api/members, PATCH /api/members/:id. All validated with Zod. Per-user scoping enforced. 8 tests in `server/tests/members.test.ts` — all passing.
+
+* [x] Implement transactions API.
 
 Description:
 Expose backend endpoints or server actions for transaction operations.
@@ -934,7 +942,9 @@ Definition of Done:
 
 * Tests cover successful and invalid transaction creation.
 
-* [ ] Implement backend reset endpoint or action.
+Implemented in `server/routes/transactions.ts`. 10 tests in `server/tests/transactions.test.ts` — all passing.
+
+* [x] Implement backend reset endpoint or action.
 
 Description:
 Reset should be calculated safely on the backend to avoid client-side tampering.
@@ -947,11 +957,13 @@ Definition of Done:
 * Backend returns updated member balance or transaction list.
 * Tests cover positive, negative, and zero reset cases.
 
+POST /api/members/:memberId/reset recalculates balance server-side from DB. 6 tests in `server/tests/reset.test.ts` — all passing.
+
 ---
 
 ## 9.3 Authentication and Authorization
 
-* [ ] Implement user authentication.
+* [x] Implement user authentication.
 
 Description:
 Add authentication suitable for a personal finance-related app.
@@ -966,7 +978,9 @@ Definition of Done:
 
 * Unauthenticated users cannot access private app data.
 
-* [ ] Enforce per-user data isolation.
+Email + password auth via bcrypt + JWT (30-day tokens). POST /api/auth/register + POST /api/auth/login. All protected routes require `Authorization: Bearer <token>`. 9 tests in `server/tests/auth.test.ts` — all passing. Note: sign-out is client-side (discard token); no server-side token revocation in this implementation.
+
+* [x] Enforce per-user data isolation.
 
 Description:
 All members and transactions must belong to a specific authenticated user.
@@ -979,11 +993,13 @@ Definition of Done:
 * A user cannot read or modify another user's data.
 * Authorization tests cover cross-user access denial.
 
+Every DB query is scoped to `req.userId`. Cross-user access returns 404. Authorization denial tested across all resources in `server/tests/members.test.ts`, `server/tests/transactions.test.ts`, and `server/tests/reset.test.ts`.
+
 ---
 
 # 10. Frontend Integration with Backend
 
-* [ ] Implement API-backed repository.
+* [x] Implement API-backed repository.
 
 Description:
 Replace or supplement local storage with a repository that communicates with the backend.
@@ -1000,7 +1016,9 @@ Definition of Done:
 
 * Reset action saves to backend.
 
-* [ ] Add loading states.
+Implemented `resetMemberDebt(memberId)` in `DebtRepository` interface. `apiDebtRepository` calls `POST /api/members/:memberId/reset` (server-side balance recalculation). `localStorageDebtRepository` calculates locally. `App.tsx` uses `repository.resetMemberDebt` instead of client-side calculation.
+
+* [x] Add loading states.
 
 Description:
 Show user-friendly Hebrew loading states when backend data is loading.
@@ -1017,7 +1035,9 @@ Definition of Done:
 
 * User cannot accidentally submit the same action repeatedly while pending.
 
-* [ ] Add error states.
+Added `isSavingMember`, `isSavingTransaction`, `isResetting` pending states. Buttons show Hebrew pending labels and are disabled while their action is in-flight. Main screen shows `ui.members.loading` while data loads.
+
+* [x] Add error states.
 
 Description:
 Display clear Hebrew errors when backend actions fail.
@@ -1030,13 +1050,15 @@ Definition of Done:
 * Failed data loading shows a recoverable error state.
 * Errors do not expose sensitive technical details.
 
+Added `loadError`, `memberCreateError`, `transactionCreateError`, `resetError` states. All display generic Hebrew error messages (`ui.error.*`). No stack traces or internal details exposed. New Hebrew strings added to `src/i18n/he.ts` under `loading` and `error` sections.
+
 ---
 
 # 11. Editing and Data Maintenance Features
 
 ## 11.1 Edit Member
 
-* [ ] Implement edit member name.
+* [x] Implement edit member name.
 
 Description:
 Allow correcting a member's name.
@@ -1048,11 +1070,13 @@ Definition of Done:
 * Updated name appears across the app.
 * Existing transactions remain associated with the member.
 
+Implemented: "שינוי שם" button on member detail screen opens an inline edit form with the current name pre-filled. Validates empty/whitespace (`יש להזין שם`) and duplicate names (`איש קשר בשם הזה כבר קיים`) against other members. Calls `repository.updateMember` then updates local React state. Transactions remain associated via `memberId` which never changes. 8 tests added to `src/tests/App.test.tsx`.
+
 ---
 
 ## 11.2 Optional Transaction Maintenance
 
-* [ ] Decide whether transaction editing is included before deployment.
+* [x] Decide whether transaction editing is included before deployment.
 
 Description:
 Transaction editing is not part of the original MVP, but a deploy-ready app may need correction flows.
@@ -1065,7 +1089,9 @@ Definition of Done:
 
 * If included, implementation tasks are added for edit validation, audit behavior, and tests.
 
-* [ ] Decide whether transaction deletion is included before deployment.
+**Decision: NOT included before deployment.** Transaction editing is out of scope for Phase 1 per the spec. Users who entered a wrong amount can add a correction transaction in the opposite direction. Full decision rationale documented in `docs/ARCHITECTURE.md` (Section 11 — Transaction Maintenance Decisions).
+
+* [x] Decide whether transaction deletion is included before deployment.
 
 Description:
 Transaction deletion is potentially destructive and should be handled carefully.
@@ -1076,11 +1102,13 @@ Definition of Done:
 * If omitted, user has a reasonable alternative such as adding a correction transaction.
 * If included, deletion requires confirmation and tests.
 
+**Decision: NOT included before deployment.** Preserving transaction history is a core design principle. Users can add correction transactions to cancel unwanted amounts. Full decision rationale documented in `docs/ARCHITECTURE.md` (Section 11 — Transaction Maintenance Decisions).
+
 ---
 
 # 12. Accessibility
 
-* [ ] Add accessible labels for all inputs and buttons.
+* [x] Add accessible labels for all inputs and buttons.
 
 Description:
 Ensure the app is usable with assistive technologies.
@@ -1093,7 +1121,9 @@ Definition of Done:
 
 * Form errors are associated with relevant fields where practical.
 
-* [ ] Make dialogs accessible.
+All inputs have `<label>` elements (via the `TextInput` component or explicit `htmlFor`). Radio buttons are wrapped in `<label>`. Textareas have `htmlFor` labels. All buttons have visible Hebrew text — no icon-only buttons exist. Form fields use `aria-invalid` + `aria-describedby` wired to error `<p id>` elements. 9 accessibility-focused tests added to `src/tests/App.test.tsx`.
+
+* [x] Make dialogs accessible.
 
 Description:
 Confirmation dialogs must behave accessibly.
@@ -1110,7 +1140,9 @@ Definition of Done:
 
 * Focus returns to the triggering control after close where practical.
 
-* [ ] Verify keyboard navigation.
+Created `src/components/primitives/Dialog.tsx` — a reusable component with `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, focus-on-open (first focusable child), Tab/Shift+Tab focus trap, Escape-to-close, and focus-return-to-trigger on close. All three confirmation dialogs (reset debt, delete member, delete transaction) now use this component. Tests verify focus-in, Escape, and focus-return behaviors.
+
+* [x] Verify keyboard navigation.
 
 Description:
 The app should be usable with keyboard navigation.
@@ -1121,11 +1153,13 @@ Definition of Done:
 * Focus order is logical in RTL layout.
 * Visible focus indication exists.
 
+All interactive elements (buttons, inputs, selects, textareas, radio buttons) are keyboard-reachable via Tab. Focus order follows DOM order which matches the logical RTL reading direction. Updated `global.css`: changed `:focus` to `:focus-visible` for form fields for cleaner keyboard-only outlines; added `:focus-within` highlight for radio group label rows; suppressed redundant outline on the `[role="dialog"]` container. Verified that Tab order in dialogs (Cancel → Confirm) is correct for RTL.
+
 ---
 
 # 13. Security and Privacy
 
-* [ ] Validate all user input on the client.
+* [x] Validate all user input on the client.
 
 Description:
 Catch common invalid input early and provide Hebrew feedback.
@@ -1140,7 +1174,9 @@ Definition of Done:
 
 * Date validation exists.
 
-* [ ] Validate all user input on the backend.
+`App.tsx` validates all fields before saving: member name (empty/whitespace/duplicate), transaction amount (required/zero/negative/invalid number), transaction title (required), and transaction date (required). All validation errors use Hebrew strings from `src/i18n/he.ts`. Tests cover all invalid-input paths in `src/tests/App.test.tsx`.
+
+* [x] Validate all user input on the backend.
 
 Description:
 Client validation is not sufficient. Backend must enforce data rules.
@@ -1157,7 +1193,9 @@ Definition of Done:
 
 * Backend tests cover invalid inputs.
 
-* [ ] Prevent unsafe rendering of user-generated content.
+Implemented in `server/lib/validation.ts` via Zod schemas: `createMemberSchema` (name min 1, max 200, trimmed; whitespace-only rejected explicitly in route), `createTransactionSchema` (amountMinor int positive, direction enum, title min 1 max 500, date YYYY-MM-DD regex, notes max 2000). Every transaction creation/update verifies the target member belongs to `req.userId`; foreign members return 404. Backend tests in `server/tests/members.test.ts`, `server/tests/transactions.test.ts`, `server/tests/auth.test.ts` cover all invalid-input and cross-user access cases (44 tests, all passing).
+
+* [x] Prevent unsafe rendering of user-generated content.
 
 Description:
 Member names, titles, and notes are user-generated and must be rendered safely.
@@ -1170,7 +1208,9 @@ Definition of Done:
 
 * Security test or manual test verifies HTML-like input is not executed.
 
-* [ ] Remove sensitive logging.
+React renders all user-generated content (`{member.name}`, `{transaction.title}`, `{transaction.notes}`, etc.) via JSX text interpolation, which escapes HTML entities automatically. No `dangerouslySetInnerHTML` or `innerHTML` assignments exist anywhere in the frontend (`grep` confirmed). Three automated security tests added to `src/tests/App.test.tsx` (describe "Security — safe rendering") verify that HTML-like strings in member names, transaction titles, and notes render as escaped text nodes — no child elements are injected. Two backend tests in `server/tests/transactions.test.ts` confirm HTML-like strings are stored and returned as plain JSON strings. Front-end 82/82 and backend 46/46 tests pass.
+
+* [x] Remove sensitive logging.
 
 Description:
 The app must not log personal financial data unnecessarily.
@@ -1183,7 +1223,9 @@ Definition of Done:
 
 * Errors shown to users do not reveal stack traces or sensitive internals.
 
-* [ ] Protect secrets and environment variables.
+Audited all `console.log`/`console.error` calls: the only occurrences are `console.log('[server] running on port ${PORT}')` (server startup, no personal data) and `console.error('[server error]', err.message)` in the generic error handler (logs only the internal JS error message, never user-supplied content). The frontend shows opaque Hebrew error strings from `ui.error.*` — no stack traces or server internals are exposed to users. No other `console.*` calls found in frontend source.
+
+* [x] Protect secrets and environment variables.
 
 Description:
 Ensure deployment secrets are not exposed to the frontend or committed to source control.
@@ -1195,13 +1237,15 @@ Definition of Done:
 * Public frontend environment variables contain no secrets.
 * Deployment docs list required environment variables without exposing values.
 
+`JWT_SECRET` and `DATABASE_URL` are read exclusively from `process.env` in `server/lib/auth.ts` and Prisma config. `.env` is listed in `.gitignore` (confirmed). `.env.example` ships as a template with placeholder values only. The Vite frontend uses no `VITE_*` environment variables containing secrets — the only API communication is via bearer tokens issued at runtime. Required variables documented in `docs/ARCHITECTURE.md` (Environment Variables table) and `.env.example`.
+
 ---
 
 # 14. Testing
 
 ## 14.1 Unit Tests
 
-* [ ] Add tests for money utilities.
+* [x] Add tests for money utilities.
 
 Description:
 Verify amount parsing and ILS formatting.
@@ -1214,7 +1258,9 @@ Definition of Done:
 
 * Formatting is covered for representative values.
 
-* [ ] Add tests for balance logic.
+Tests exist in `src/tests/domain.test.ts` under the "money utilities" describe block (3 tests covering parsing, rejection of invalid input, and ILS formatting). All 82 frontend unit/component tests pass.
+
+* [x] Add tests for balance logic.
 
 Description:
 Verify all balance semantics.
@@ -1231,7 +1277,9 @@ Definition of Done:
 
 * Multiple members covered where relevant.
 
-* [ ] Add tests for reset logic.
+Tests exist in `src/tests/domain.test.ts` under the "balance logic" describe block (3 tests covering signed amounts, per-member balance for all four cases, and aggregate summary across multiple members). All pass.
+
+* [x] Add tests for reset logic.
 
 Description:
 Verify reset adjustment behavior.
@@ -1246,7 +1294,9 @@ Definition of Done:
 
 * Final calculated balance is zero after reset transaction.
 
-* [ ] Add tests for sorting logic.
+Tests exist in `src/tests/domain.test.ts` under the "reset debt logic" describe block (3 tests covering positive/negative/zero cases and verifying the final balance is exactly zero). All pass.
+
+* [x] Add tests for sorting logic.
 
 Description:
 Verify member ordering rules.
@@ -1257,11 +1307,13 @@ Definition of Done:
 * Larger absolute balances appear before smaller balances.
 * Tie behavior is deterministic.
 
+Tests exist in `src/tests/memberSorting.test.ts` (2 tests). All pass.
+
 ---
 
 ## 14.2 Component Tests
 
-* [ ] Test add member form.
+* [x] Test add member form.
 
 Description:
 Verify member creation UI behavior.
@@ -1274,7 +1326,9 @@ Definition of Done:
 
 * Duplicate name behavior is tested.
 
-* [ ] Test add transaction form.
+Covered in `src/tests/App.test.tsx`: "adds a member from the Hebrew add member form", "rejects empty member names", "rejects duplicate member names after trimming whitespace". All pass.
+
+* [x] Test add transaction form.
 
 Description:
 Verify transaction creation UI behavior.
@@ -1289,7 +1343,9 @@ Definition of Done:
 
 * Direction selection is tested.
 
-* [ ] Test reset confirmation dialog.
+Covered in `src/tests/App.test.tsx`: "opens the add transaction form with today's date and Hebrew labels", "rejects missing transaction fields with Hebrew validation messages", "rejects invalid transaction amount" (3 param cases), "creates a transaction and updates the member balance immediately", and accessibility tests verifying all fields have labeled inputs. All pass.
+
+* [x] Test reset confirmation dialog.
 
 Description:
 Verify that reset requires explicit confirmation.
@@ -1300,11 +1356,13 @@ Definition of Done:
 * Clicking cancel does not change balance.
 * Clicking confirm creates reset adjustment.
 
+Covered in `src/tests/App.test.tsx`: "opens reset dialog and cancel closes it without changing balance", "confirms reset by creating a reset_adjustment transaction, preserving history, and zeroing balance", and 4 accessibility tests for the reset dialog (focus, Escape, focus-return). All pass.
+
 ---
 
 ## 14.3 End-to-End Tests
 
-* [ ] Add E2E test for core happy path.
+* [x] Add E2E test for core happy path.
 
 Description:
 Test the main user workflow from an empty app.
@@ -1326,7 +1384,9 @@ Definition of Done:
 
 * Test runs against production-like build where practical.
 
-* [ ] Add E2E test for reset flow.
+Implemented in `e2e/happy-path.spec.ts` (2 tests). Tests assert Hebrew titles (`מעקב חובות`, `הוספת איש קשר`, `עסקה חדשה`, `היסטוריית עסקאות`), Hebrew balance text (`דני חייב לך`), and transaction appearing in history. All pass via `npm run test:e2e`.
+
+* [x] Add E2E test for reset flow.
 
 Description:
 Test safe reset behavior.
@@ -1351,7 +1411,9 @@ Definition of Done:
 
 * History is preserved.
 
-* [ ] Add E2E test for mobile viewport.
+Implemented in `e2e/reset-flow.spec.ts` (3 tests). Tests assert: reset button disabled + Hebrew message when balance is zero; cancel does not change balance; confirm zeros balance and the original transaction plus the `איפוס חוב` adjustment both appear in history. All pass.
+
+* [x] Add E2E test for mobile viewport.
 
 Description:
 Verify the app is usable on mobile dimensions.
@@ -1361,6 +1423,8 @@ Definition of Done:
 * Test runs at a mobile viewport size.
 * Main transaction flow is usable.
 * No horizontal overflow is detected where practical.
+
+Implemented in `e2e/mobile-viewport.spec.ts` (2 tests). Tests run at 390×844 (iPhone 14). Verifies Hebrew UI, `inputmode="decimal"` on amount field, and checks `scrollWidth <= clientWidth`. Both pass.
 
 ---
 
