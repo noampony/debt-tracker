@@ -149,8 +149,7 @@ p {
   gap: 12px;
 }
 
-.section-heading,
-.member-row {
+.section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -186,7 +185,8 @@ p {
 }
 
 .member-row {
-  align-items: flex-start;
+  display: grid;
+  gap: 10px;
 }
 
 .member-row > div:first-child {
@@ -421,8 +421,9 @@ p {
 }
 
 .member-actions {
-  flex-shrink: 0;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .member-row h3 {
@@ -716,19 +717,7 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .member-row {
-    display: grid;
-  }
-
   .transaction-card-header {
     display: grid;
-  }
-
-  .member-actions {
-    justify-content: stretch;
-  }
-
-  .member-actions .button {
-    flex: 1 1 128px;
   }
 }
