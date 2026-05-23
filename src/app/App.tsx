@@ -29,6 +29,16 @@ type TransactionFormErrors = {
   transactionDate?: string;
 };
 
+function TransactionReasonSuggestions({ id }: { id: string }) {
+  return (
+    <datalist id={id}>
+      {ui.transaction.commonReasons.map((reason) => (
+        <option key={reason} value={reason} />
+      ))}
+    </datalist>
+  );
+}
+
 function formatMemberBalance(member: Member, balanceMinor: number): string {
   if (balanceMinor > 0) {
     return `${member.name} חייב לך ${formatIls(balanceMinor)}`;
@@ -727,6 +737,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
             <TextInput
               label={ui.transaction.reasonLabel}
               value={transactionTitle}
+              list="transaction-reason-suggestions"
               placeholder={ui.transaction.reasonPlaceholder}
               onChange={(event) => {
                 setTransactionTitle(event.target.value);
@@ -740,6 +751,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                 {transactionErrors.title}
               </p>
             )}
+            <TransactionReasonSuggestions id="transaction-reason-suggestions" />
 
             <TextInput
               label={ui.transaction.dateLabel}
@@ -909,6 +921,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
           <TextInput
             label={ui.transaction.reasonLabel}
             value={editTransactionTitle}
+            list={`edit-tx-reason-suggestions-${transaction.id}`}
             placeholder={ui.transaction.reasonPlaceholder}
             onChange={(event) => {
               setEditTransactionTitle(event.target.value);
@@ -922,6 +935,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
               {editTransactionErrors.title}
             </p>
           )}
+          <TransactionReasonSuggestions id={`edit-tx-reason-suggestions-${transaction.id}`} />
           <TextInput
             label={ui.transaction.dateLabel}
             type="date"
@@ -1108,7 +1122,6 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     <AppShell title={ui.app.title} subtitle={ui.app.subtitle} userEmail={userEmail} onLogout={onLogout}>
       <section className="hero-section" aria-labelledby="quick-action-title">
         <div>
-          <p className="eyebrow">{ui.home.todayLabel}</p>
           <h2 id="quick-action-title">{ui.home.quickActionTitle}</h2>
           <p>{ui.home.quickActionDescription}</p>
         </div>
