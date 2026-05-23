@@ -155,6 +155,7 @@ export function createLocalStorageDebtRepository(
         ...collection,
         records: [...collection.records, copyMember(member)],
       });
+      return copyMember(member);
     },
 
     async updateMember(member) {
@@ -177,6 +178,7 @@ export function createLocalStorageDebtRepository(
         ...collection,
         records: [...collection.records, copyTransaction(transaction)],
       });
+      return copyTransaction(transaction);
     },
   };
 }

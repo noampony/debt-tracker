@@ -18,6 +18,8 @@ import { createResetAdjustmentTransaction } from "../features/transactions/reset
 
 type AppProps = {
   repository: DebtRepository;
+  userEmail?: string;
+  onLogout?: () => void;
 };
 
 type TransactionFormErrors = {
@@ -63,7 +65,7 @@ function getCreatedAtSortTime(transaction: Transaction): number {
   return Number.isFinite(createdAtTime) ? createdAtTime : 0;
 }
 
-export function App({ repository }: AppProps) {
+export function App({ repository, userEmail, onLogout }: AppProps) {
   const todayDateIso = getTodayDateIso();
   const amountInputRef = useRef<HTMLInputElement>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -225,13 +227,13 @@ export function App({ repository }: AppProps) {
       updatedAt: now,
     };
 
-    await repository.createMember(member);
+    const created = await repository.createMember(member);
     setMembers((currentMembers) => {
-      if (currentMembers.some((currentMember) => currentMember.id === member.id)) {
+      if (currentMembers.some((currentMember) => currentMember.id === created.id)) {
         return [...currentMembers];
       }
 
-      return [...currentMembers, member];
+      return [...currentMembers, created];
     });
     closeAddMemberForm();
   }
@@ -314,8 +316,8 @@ export function App({ repository }: AppProps) {
       type: "manual",
     };
 
-    await repository.createTransaction(transaction);
-    setTransactions((currentTransactions) => [...currentTransactions, transaction]);
+    const created = await repository.createTransaction(transaction);
+    setTransactions((currentTransactions) => [...currentTransactions, created]);
     closeTransactionForm();
   }
 
@@ -350,8 +352,8 @@ export function App({ repository }: AppProps) {
       return;
     }
 
-    await repository.createTransaction(resetTransaction);
-    setTransactions((currentTransactions) => [...currentTransactions, resetTransaction]);
+    const created = await repository.createTransaction(resetTransaction);
+    setTransactions((currentTransactions) => [...currentTransactions, created]);
     closeResetDialog();
   }
 
@@ -526,7 +528,7 @@ export function App({ repository }: AppProps) {
     const isResetDisabled = selectedMemberBalanceMinor === 0;
 
     return (
-      <AppShell title={ui.app.title} subtitle={ui.app.subtitle}>
+      <AppShell title={ui.app.title} subtitle={ui.app.subtitle} userEmail={userEmail} onLogout={onLogout}>
         <section className="section-stack" aria-labelledby="member-detail-title">
           <Button type="button" variant="ghost" className="back-button" onClick={() => setSelectedMemberId("")}>
             {ui.actions.back}
@@ -606,7 +608,7 @@ export function App({ repository }: AppProps) {
   }
 
   return (
-    <AppShell title={ui.app.title} subtitle={ui.app.subtitle}>
+    <AppShell title={ui.app.title} subtitle={ui.app.subtitle} userEmail={userEmail} onLogout={onLogout}>
       <section className="hero-section" aria-labelledby="quick-action-title">
         <div>
           <p className="eyebrow">{ui.home.todayLabel}</p>

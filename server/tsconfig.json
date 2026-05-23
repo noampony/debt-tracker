@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "typeRoots": ["./types", "../node_modules/@types"]
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["../node_modules"]
+}
+

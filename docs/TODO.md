@@ -842,7 +842,7 @@ Definition of Done:
 
 ## 9.1 Backend Architecture
 
-* [ ] Decide and document backend architecture.
+* [x] Decide and document backend architecture.
 
 Description:
 Choose the backend implementation appropriate for deployment. Options include Next.js API routes, a separate Node backend, or another production-ready backend.
@@ -855,7 +855,9 @@ Definition of Done:
 
 * Local repository abstraction can be replaced or backed by API calls.
 
-* [ ] Implement backend data models.
+Architecture decision: Separate Express v5 + TypeScript backend in `server/`. See `docs/ARCHITECTURE.md` for full details. The frontend `DebtRepository` interface allows clean swapping between local and API-backed storage.
+
+* [x] Implement backend data models.
 
 Description:
 Create backend representations for users, members, and transactions.
@@ -872,7 +874,9 @@ Definition of Done:
 
 * Created/updated timestamps are stored.
 
-* [ ] Implement database persistence.
+Implemented via Prisma v5 schema: `User`, `Member`, `Transaction` models in `prisma/schema.prisma`. Amounts stored as `Int` (agorot). Timestamps auto-managed by Prisma.
+
+* [x] Implement database persistence.
 
 Description:
 Store members and transactions in a production-capable database.
@@ -885,11 +889,13 @@ Definition of Done:
 * Transactions persist in the database.
 * Data survives app restarts and redeployments.
 
+SQLite (dev) / PostgreSQL (prod) via Prisma. Migration at `prisma/migrations/20260523120000_init/migration.sql`. Run `npm run db:migrate` to apply.
+
 ---
 
 ## 9.2 Backend API
 
-* [ ] Implement members API.
+* [x] Implement members API.
 
 Description:
 Expose backend endpoints or server actions for member operations.
@@ -910,7 +916,9 @@ Definition of Done:
 
 * Tests cover successful and invalid member creation.
 
-* [ ] Implement transactions API.
+Implemented in `server/routes/members.ts`: GET /api/members, POST /api/members, PATCH /api/members/:id. All validated with Zod. Per-user scoping enforced. 8 tests in `server/tests/members.test.ts` — all passing.
+
+* [x] Implement transactions API.
 
 Description:
 Expose backend endpoints or server actions for transaction operations.
@@ -934,7 +942,9 @@ Definition of Done:
 
 * Tests cover successful and invalid transaction creation.
 
-* [ ] Implement backend reset endpoint or action.
+Implemented in `server/routes/transactions.ts`. 10 tests in `server/tests/transactions.test.ts` — all passing.
+
+* [x] Implement backend reset endpoint or action.
 
 Description:
 Reset should be calculated safely on the backend to avoid client-side tampering.
@@ -947,11 +957,13 @@ Definition of Done:
 * Backend returns updated member balance or transaction list.
 * Tests cover positive, negative, and zero reset cases.
 
+POST /api/members/:memberId/reset recalculates balance server-side from DB. 6 tests in `server/tests/reset.test.ts` — all passing.
+
 ---
 
 ## 9.3 Authentication and Authorization
 
-* [ ] Implement user authentication.
+* [x] Implement user authentication.
 
 Description:
 Add authentication suitable for a personal finance-related app.
@@ -966,7 +978,9 @@ Definition of Done:
 
 * Unauthenticated users cannot access private app data.
 
-* [ ] Enforce per-user data isolation.
+Email + password auth via bcrypt + JWT (30-day tokens). POST /api/auth/register + POST /api/auth/login. All protected routes require `Authorization: Bearer <token>`. 9 tests in `server/tests/auth.test.ts` — all passing. Note: sign-out is client-side (discard token); no server-side token revocation in this implementation.
+
+* [x] Enforce per-user data isolation.
 
 Description:
 All members and transactions must belong to a specific authenticated user.
@@ -978,6 +992,8 @@ Definition of Done:
 * Backend queries are scoped to the authenticated user.
 * A user cannot read or modify another user's data.
 * Authorization tests cover cross-user access denial.
+
+Every DB query is scoped to `req.userId`. Cross-user access returns 404. Authorization denial tested across all resources in `server/tests/members.test.ts`, `server/tests/transactions.test.ts`, and `server/tests/reset.test.ts`.
 
 ---
 
