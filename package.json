@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "db:migrate": "prisma migrate deploy",
     "db:generate": "prisma generate",
-    "db:encode-fields": "tsx scripts/migrate-encode-fields.ts"
+    "db:encode-fields": "tsx scripts/migrate-encode-fields.ts",
+    "db:fix-double-encoded": "tsx scripts/fix-double-encoded-fields.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
