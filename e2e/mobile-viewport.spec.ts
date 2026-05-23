@@ -17,10 +17,10 @@ test.describe("Mobile viewport", () => {
     await registerAndLogin(page, email, TEST_PASSWORD);
 
     // Hebrew app title visible
-    await expect(page.getByText("מעקב חובות")).toBeVisible();
+    await expect(page.getByText("החזרתי?")).toBeVisible();
 
     // Primary action button is visible and tappable
-    await expect(page.getByRole("button", { name: "עסקה חדשה" }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "תנועה חדשה" }).first()).toBeVisible();
 
     // No horizontal scrollbar – document scroll width should equal viewport width
     const overflows = await page.evaluate(() => {
@@ -42,8 +42,8 @@ test.describe("Mobile viewport", () => {
     await expect(page.getByRole("heading", { level: 3, name: "עמית" })).toBeVisible();
 
     // Add transaction via Hebrew form
-    await page.getByRole("button", { name: "עסקה חדשה" }).first().click();
-    const txForm = page.getByRole("form", { name: "עסקה חדשה" });
+    await page.getByRole("button", { name: "תנועה חדשה" }).first().click();
+    const txForm = page.getByRole("form", { name: "תנועה חדשה" });
     await expect(txForm).toBeVisible();
 
     // Amount field should use a numeric input mode (mobile keyboard)
