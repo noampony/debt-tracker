@@ -8,7 +8,7 @@ import { TextInput } from "../components/primitives/TextInput";
 import type { Member } from "../features/members/types";
 import { sortMembersByBalance } from "../features/members/sorting";
 import type { Transaction } from "../features/transactions/types";
-import { calculateMemberBalance } from "../features/balances/balance";
+import { calculateBalanceSummary, calculateMemberBalance } from "../features/balances/balance";
 import { getTodayDateIso } from "../lib/dates";
 import { createId } from "../lib/ids";
 import { formatIls, parseIlsInputToMinor } from "../lib/money";
@@ -64,6 +64,15 @@ export function App({ repository }: AppProps) {
           ...member,
           balanceMinor: calculateMemberBalance(member.id, transactions),
         })),
+      ),
+    [members, transactions],
+  );
+
+  const balanceSummary = useMemo(
+    () =>
+      calculateBalanceSummary(
+        members.map((member) => member.id),
+        transactions,
       ),
     [members, transactions],
   );
@@ -266,6 +275,22 @@ export function App({ repository }: AppProps) {
         <Button type="button" className="prominent-action" onClick={() => openTransactionForm()}>
           {ui.actions.newTransaction}
         </Button>
+      </section>
+
+      <section className="section-stack" aria-labelledby="summary-title">
+        <div className="section-heading">
+          <h2 id="summary-title">{ui.overview.title}</h2>
+        </div>
+        <div className="summary-grid">
+          <Card className="summary-card">
+            <p className="summary-label">{ui.overview.totalOwedToUser}</p>
+            <p className="summary-amount">{formatIls(balanceSummary.totalOwedToUserMinor)}</p>
+          </Card>
+          <Card className="summary-card">
+            <p className="summary-label">{ui.overview.totalUserOwes}</p>
+            <p className="summary-amount">{formatIls(balanceSummary.totalUserOwesMinor)}</p>
+          </Card>
+        </div>
       </section>
 
       {isTransactionFormOpen && (

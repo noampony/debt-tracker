@@ -6,6 +6,7 @@ import { ui } from "../i18n/he";
 import type { DebtRepository } from "../storage/debtRepository";
 import type { Member } from "../features/members/types";
 import type { Transaction } from "../features/transactions/types";
+import { formatIls } from "../lib/money";
 
 const emptyRepository: DebtRepository = {
   getMembers: async () => [],
@@ -39,6 +40,38 @@ function createMemoryRepository(
       transactions.push(transaction);
     },
   };
+}
+
+function createMember(id: string, name: string): Member {
+  return {
+    id,
+    name,
+    createdAt: "2026-05-23T08:00:00.000Z",
+    updatedAt: "2026-05-23T08:00:00.000Z",
+  };
+}
+
+function createTransaction(
+  id: string,
+  memberId: string,
+  amountMinor: number,
+  direction: Transaction["direction"] = "member_owes_user",
+): Transaction {
+  return {
+    id,
+    memberId,
+    amountMinor,
+    direction,
+    title: "ארוחה",
+    transactionDate: "2026-05-23",
+    createdAt: "2026-05-23T08:05:00.000Z",
+    updatedAt: "2026-05-23T08:05:00.000Z",
+    type: "manual",
+  };
+}
+
+function getSummaryAmount(card: HTMLElement): string | null {
+  return card.querySelector(".summary-amount")?.textContent ?? null;
 }
 
 describe("App", () => {
@@ -81,6 +114,76 @@ describe("App", () => {
     );
 
     expect(await screen.findByText(/דני חייב לך/)).toBeInTheDocument();
+  });
+
+  it("shows aggregate summary cards with formatted ILS totals", async () => {
+    render(
+      <App
+        repository={createMemoryRepository(
+          [createMember("member-1", "דני"), createMember("member-2", "נועה"), createMember("member-3", "יואב")],
+          [
+            createTransaction("transaction-1", "member-1", 5000),
+            createTransaction("transaction-2", "member-2", 3000, "user_owes_member"),
+            createTransaction("transaction-3", "member-3", 1000),
+            createTransaction("transaction-4", "member-3", 1000, "user_owes_member"),
+          ],
+        )}
+      />,
+    );
+
+    expect(await screen.findByText(ui.overview.totalOwedToUser)).toBeInTheDocument();
+    expect(screen.getByText(ui.overview.totalUserOwes)).toBeInTheDocument();
+
+    const owedToUserCard = screen.getByText(ui.overview.totalOwedToUser).closest(".summary-card") as HTMLElement;
+    const userOwesCard = screen.getByText(ui.overview.totalUserOwes).closest(".summary-card") as HTMLElement;
+
+    expect(getSummaryAmount(owedToUserCard)).toBe(formatIls(5000));
+    expect(getSummaryAmount(userOwesCard)).toBe(formatIls(3000));
+  });
+
+  it("updates the aggregate summary after adding a transaction", async () => {
+    const user = userEvent.setup();
+
+    render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+    expect(await screen.findByText(ui.overview.totalOwedToUser)).toBeInTheDocument();
+    const owedToUserCard = screen.getByText(ui.overview.totalOwedToUser).closest(".summary-card") as HTMLElement;
+    const userOwesCard = screen.getByText(ui.overview.totalUserOwes).closest(".summary-card") as HTMLElement;
+
+    expect(getSummaryAmount(owedToUserCard)).toBe(formatIls(0));
+    expect(getSummaryAmount(userOwesCard)).toBe(formatIls(0));
+
+    await user.click(screen.getAllByRole("button", { name: ui.actions.newTransaction })[0]);
+    await user.selectOptions(screen.getByLabelText(ui.transaction.memberLabel), "member-1");
+    await user.type(screen.getByLabelText(ui.transaction.amountLabel), "42.50");
+    await user.click(screen.getByLabelText(ui.transaction.userOwesMemberLabel));
+    await user.type(screen.getByLabelText(ui.transaction.reasonLabel), "נסיעה");
+    await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+    expect(await within(userOwesCard).findByText(/42.50/)).toBeInTheDocument();
+    expect(getSummaryAmount(userOwesCard)).toBe(formatIls(4250));
+    expect(getSummaryAmount(owedToUserCard)).toBe(formatIls(0));
+  });
+
+  it("renders distinct natural Hebrew member balance text for positive, negative, and zero balances", async () => {
+    render(
+      <App
+        repository={createMemoryRepository(
+          [createMember("member-1", "דני"), createMember("member-2", "נועה"), createMember("member-3", "יואב")],
+          [
+            createTransaction("transaction-1", "member-1", 5000),
+            createTransaction("transaction-2", "member-2", 3000, "user_owes_member"),
+          ],
+        )}
+      />,
+    );
+
+    const positiveBalance = await screen.findByText(/דני חייב לך/);
+    const negativeBalance = screen.getByText(/אתה חייב לנועה/);
+
+    expect(positiveBalance.textContent).toBe(`דני חייב לך ${formatIls(5000)}`);
+    expect(negativeBalance.textContent).toBe(`אתה חייב לנועה ${formatIls(3000)}`);
+    expect(screen.getByText("אין חוב פתוח מול יואב")).toBeInTheDocument();
   });
 
   it("adds a member from the Hebrew add member form", async () => {
