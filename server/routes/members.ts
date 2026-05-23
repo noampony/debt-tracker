@@ -5,6 +5,12 @@ import {
   createMemberSchema,
   updateMemberSchema,
 } from "../lib/validation.js";
+import { encode, decode } from "../lib/codec.js";
+
+/** Decode a raw DB member record before sending it to the client. */
+function decodeMember(member: { id: string; name: string; createdAt: Date; updatedAt: Date }) {
+  return { ...member, name: decode(member.name) };
+}
 
 const router = Router();
 router.use(authMiddleware);
@@ -16,7 +22,7 @@ router.get("/members", async (req, res) => {
     orderBy: { createdAt: "asc" },
     select: { id: true, name: true, createdAt: true, updatedAt: true },
   });
-  res.json(members);
+  res.json(members.map(decodeMember));
 });
 
 // POST /api/members — create a new member
@@ -33,8 +39,10 @@ router.post("/members", async (req, res) => {
     return;
   }
 
+  const encodedName = encode(name);
+
   const existing = await db.member.findFirst({
-    where: { userId: req.userId, name },
+    where: { userId: req.userId, name: encodedName },
   });
   if (existing) {
     res.status(409).json({ error: "A member with this name already exists" });
@@ -42,11 +50,11 @@ router.post("/members", async (req, res) => {
   }
 
   const member = await db.member.create({
-    data: { userId: req.userId, name },
+    data: { userId: req.userId, name: encodedName },
     select: { id: true, name: true, createdAt: true, updatedAt: true },
   });
 
-  res.status(201).json(member);
+  res.status(201).json(decodeMember(member));
 });
 
 // PATCH /api/members/:id — rename a member
@@ -69,8 +77,10 @@ router.patch("/members/:id", async (req, res) => {
 
   const { name } = result.data;
 
+  const encodedName = encode(name);
+
   const duplicate = await db.member.findFirst({
-    where: { userId: req.userId, name, NOT: { id: memberId } },
+    where: { userId: req.userId, name: encodedName, NOT: { id: memberId } },
   });
   if (duplicate) {
     res.status(409).json({ error: "A member with this name already exists" });
@@ -79,11 +89,11 @@ router.patch("/members/:id", async (req, res) => {
 
   const member = await db.member.update({
     where: { id: memberId },
-    data: { name, updatedAt: new Date() },
+    data: { name: encodedName, updatedAt: new Date() },
     select: { id: true, name: true, createdAt: true, updatedAt: true },
   });
 
-  res.json(member);
+  res.json(decodeMember(member));
 });
 
 // DELETE /api/members/:id — delete a member and all their transactions

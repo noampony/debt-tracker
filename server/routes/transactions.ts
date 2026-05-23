@@ -3,6 +3,7 @@ import { db } from "../lib/db.js";
 import { authMiddleware } from "../lib/middleware.js";
 import { createTransactionSchema, updateTransactionSchema } from "../lib/validation.js";
 import { calculateMemberBalance } from "../lib/balance.js";
+import { encode, decode } from "../lib/codec.js";
 
 const router = Router();
 router.use(authMiddleware);
@@ -21,6 +22,28 @@ const TX_SELECT = {
   updatedAt: true,
 } as const;
 
+type TxRow = {
+  id: string;
+  memberId: string;
+  amountMinor: number;
+  direction: string;
+  title: string;
+  notes: string | null;
+  transactionDate: string;
+  type: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** Decode stored-encoded fields before returning a transaction to the client. */
+function decodeTransaction(tx: TxRow) {
+  return {
+    ...tx,
+    title: decode(tx.title),
+    notes: tx.notes != null ? decode(tx.notes) : tx.notes,
+  };
+}
+
 /**
  * GET /api/transactions
  * Returns all transactions across all of the authenticated user's members.
@@ -31,7 +54,7 @@ router.get("/transactions", async (req, res) => {
     orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }],
     select: TX_SELECT,
   });
-  res.json(transactions);
+  res.json(transactions.map(decodeTransaction));
 });
 
 /**
@@ -56,7 +79,7 @@ router.get("/members/:memberId/transactions", async (req, res) => {
     select: TX_SELECT,
   });
 
-  res.json(transactions);
+  res.json(transactions.map(decodeTransaction));
 });
 
 /**
@@ -83,11 +106,11 @@ router.post("/transactions", async (req, res) => {
   }
 
   const transaction = await db.transaction.create({
-    data: { memberId, amountMinor, direction, title, notes, transactionDate, type },
+    data: { memberId, amountMinor, direction, title: encode(title), notes: notes != null ? encode(notes) : notes, transactionDate, type },
     select: TX_SELECT,
   });
 
-  res.status(201).json(transaction);
+  res.status(201).json(decodeTransaction(transaction));
 });
 
 /**
@@ -126,14 +149,14 @@ router.post("/members/:memberId/reset", async (req, res) => {
       memberId,
       amountMinor: Math.abs(balanceMinor),
       direction: balanceMinor > 0 ? "user_owes_member" : "member_owes_user",
-      title: "איפוס חוב",
+      title: encode("איפוס חוב"),
       transactionDate: today,
       type: "reset_adjustment",
     },
     select: TX_SELECT,
   });
 
-  res.status(201).json(resetTransaction);
+  res.status(201).json(decodeTransaction(resetTransaction));
 });
 
 /**
@@ -164,11 +187,11 @@ router.patch("/transactions/:id", async (req, res) => {
 
   const updated = await db.transaction.update({
     where: { id },
-    data: { amountMinor, direction, title, notes, transactionDate, updatedAt: new Date() },
+    data: { amountMinor, direction, title: encode(title), notes: notes != null ? encode(notes) : notes, transactionDate, updatedAt: new Date() },
     select: TX_SELECT,
   });
 
-  res.json(updated);
+  res.json(decodeTransaction(updated));
 });
 
 /**
