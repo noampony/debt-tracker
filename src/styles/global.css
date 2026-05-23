@@ -210,6 +210,61 @@ p {
   line-height: 1.25;
 }
 
+.member-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.member-name-row h2 {
+  flex: 1 1 auto;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+}
+
+.icon-button:focus-visible {
+  outline: 3px solid rgba(199, 124, 57, 0.35);
+  outline-offset: 2px;
+}
+
+.icon-button-edit {
+  color: #255a52;
+}
+
+.icon-button-edit:hover {
+  background: rgba(37, 90, 82, 0.08);
+  border-color: rgba(37, 90, 82, 0.2);
+}
+
+.icon-button-danger {
+  color: #9f2626;
+}
+
+.icon-button-danger:hover {
+  background: rgba(159, 38, 38, 0.08);
+  border-color: rgba(159, 38, 38, 0.2);
+}
+
 .balance-panel {
   display: grid;
   gap: 6px;
@@ -233,6 +288,9 @@ p {
 
 .back-button {
   justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .helper-text,
@@ -418,6 +476,16 @@ p {
   min-height: 40px;
   color: #255a52;
   background: transparent;
+}
+
+.button-white {
+  color: #255a52;
+  background: #ffffff;
+  border-color: rgba(37, 90, 82, 0.22);
+}
+
+.button-white:not(:disabled):hover {
+  background: #f4faf7;
 }
 
 .button-danger {
