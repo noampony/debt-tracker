@@ -1245,7 +1245,7 @@ Definition of Done:
 
 ## 14.1 Unit Tests
 
-* [ ] Add tests for money utilities.
+* [x] Add tests for money utilities.
 
 Description:
 Verify amount parsing and ILS formatting.
@@ -1258,7 +1258,9 @@ Definition of Done:
 
 * Formatting is covered for representative values.
 
-* [ ] Add tests for balance logic.
+Tests exist in `src/tests/domain.test.ts` under the "money utilities" describe block (3 tests covering parsing, rejection of invalid input, and ILS formatting). All 82 frontend unit/component tests pass.
+
+* [x] Add tests for balance logic.
 
 Description:
 Verify all balance semantics.
@@ -1275,7 +1277,9 @@ Definition of Done:
 
 * Multiple members covered where relevant.
 
-* [ ] Add tests for reset logic.
+Tests exist in `src/tests/domain.test.ts` under the "balance logic" describe block (3 tests covering signed amounts, per-member balance for all four cases, and aggregate summary across multiple members). All pass.
+
+* [x] Add tests for reset logic.
 
 Description:
 Verify reset adjustment behavior.
@@ -1290,7 +1294,9 @@ Definition of Done:
 
 * Final calculated balance is zero after reset transaction.
 
-* [ ] Add tests for sorting logic.
+Tests exist in `src/tests/domain.test.ts` under the "reset debt logic" describe block (3 tests covering positive/negative/zero cases and verifying the final balance is exactly zero). All pass.
+
+* [x] Add tests for sorting logic.
 
 Description:
 Verify member ordering rules.
@@ -1301,11 +1307,13 @@ Definition of Done:
 * Larger absolute balances appear before smaller balances.
 * Tie behavior is deterministic.
 
+Tests exist in `src/tests/memberSorting.test.ts` (2 tests). All pass.
+
 ---
 
 ## 14.2 Component Tests
 
-* [ ] Test add member form.
+* [x] Test add member form.
 
 Description:
 Verify member creation UI behavior.
@@ -1318,7 +1326,9 @@ Definition of Done:
 
 * Duplicate name behavior is tested.
 
-* [ ] Test add transaction form.
+Covered in `src/tests/App.test.tsx`: "adds a member from the Hebrew add member form", "rejects empty member names", "rejects duplicate member names after trimming whitespace". All pass.
+
+* [x] Test add transaction form.
 
 Description:
 Verify transaction creation UI behavior.
@@ -1333,7 +1343,9 @@ Definition of Done:
 
 * Direction selection is tested.
 
-* [ ] Test reset confirmation dialog.
+Covered in `src/tests/App.test.tsx`: "opens the add transaction form with today's date and Hebrew labels", "rejects missing transaction fields with Hebrew validation messages", "rejects invalid transaction amount" (3 param cases), "creates a transaction and updates the member balance immediately", and accessibility tests verifying all fields have labeled inputs. All pass.
+
+* [x] Test reset confirmation dialog.
 
 Description:
 Verify that reset requires explicit confirmation.
@@ -1344,11 +1356,13 @@ Definition of Done:
 * Clicking cancel does not change balance.
 * Clicking confirm creates reset adjustment.
 
+Covered in `src/tests/App.test.tsx`: "opens reset dialog and cancel closes it without changing balance", "confirms reset by creating a reset_adjustment transaction, preserving history, and zeroing balance", and 4 accessibility tests for the reset dialog (focus, Escape, focus-return). All pass.
+
 ---
 
 ## 14.3 End-to-End Tests
 
-* [ ] Add E2E test for core happy path.
+* [x] Add E2E test for core happy path.
 
 Description:
 Test the main user workflow from an empty app.
@@ -1370,7 +1384,9 @@ Definition of Done:
 
 * Test runs against production-like build where practical.
 
-* [ ] Add E2E test for reset flow.
+Implemented in `e2e/happy-path.spec.ts` (2 tests). Tests assert Hebrew titles (`מעקב חובות`, `הוספת איש קשר`, `עסקה חדשה`, `היסטוריית עסקאות`), Hebrew balance text (`דני חייב לך`), and transaction appearing in history. All pass via `npm run test:e2e`.
+
+* [x] Add E2E test for reset flow.
 
 Description:
 Test safe reset behavior.
@@ -1395,7 +1411,9 @@ Definition of Done:
 
 * History is preserved.
 
-* [ ] Add E2E test for mobile viewport.
+Implemented in `e2e/reset-flow.spec.ts` (3 tests). Tests assert: reset button disabled + Hebrew message when balance is zero; cancel does not change balance; confirm zeros balance and the original transaction plus the `איפוס חוב` adjustment both appear in history. All pass.
+
+* [x] Add E2E test for mobile viewport.
 
 Description:
 Verify the app is usable on mobile dimensions.
@@ -1405,6 +1423,8 @@ Definition of Done:
 * Test runs at a mobile viewport size.
 * Main transaction flow is usable.
 * No horizontal overflow is detected where practical.
+
+Implemented in `e2e/mobile-viewport.spec.ts` (2 tests). Tests run at 390×844 (iPhone 14). Verifies Hebrew UI, `inputmode="decimal"` on amount field, and checks `scrollWidth <= clientWidth`. Both pass.
 
 ---
 

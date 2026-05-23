@@ -16,6 +16,7 @@
     "typecheck:server": "tsc -p server/tsconfig.json",
     "test": "vitest run",
     "test:server": "vitest run --config vitest.server.config.ts",
+    "test:e2e": "playwright test",
     "db:migrate": "prisma migrate deploy",
     "db:generate": "prisma generate"
   },
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.0.0",

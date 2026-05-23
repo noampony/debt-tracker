@@ -10,6 +10,11 @@ export function createApp() {
   app.use(cors());
   app.use(express.json());
 
+  // Health check — used by Playwright webServer readiness probe
+  app.get("/health", (_req: Request, res: Response) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   // Auth routes — no auth required
   app.use("/api/auth", authRouter);
 

@@ -5,13 +5,17 @@ const PORT = process.env.PORT ?? 3001;
 
 const app = createApp();
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[server] running on port ${PORT}`);
 });
 
-// Graceful shutdown
-process.on("SIGTERM", async () => {
+// Graceful shutdown — handles both Ctrl+C (SIGINT) and process manager signals (SIGTERM)
+async function shutdown() {
+  server.close();
   await db.$disconnect();
   process.exit(0);
-});
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
