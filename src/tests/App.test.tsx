@@ -1335,6 +1335,85 @@ describe("App", () => {
     expect(screen.queryByRole("dialog", { name: ui.members.resetDialogTitle })).not.toBeInTheDocument();
   });
 
+  describe("Security — safe rendering of user-generated content (XSS prevention)", () => {
+    it("renders an HTML-like member name as escaped text, not as DOM elements", async () => {
+      const htmlName = '<script>alert("xss")</script>';
+
+      render(<App repository={createMemoryRepository([createMember("xss-member", htmlName)])} />);
+
+      // testing-library matches by textContent, so it finds the heading
+      const heading = await screen.findByRole("heading", { level: 3, name: htmlName });
+      expect(heading).toBeInTheDocument();
+
+      // The h3 must contain only a text node — no child element should have been injected
+      expect(heading.childElementCount).toBe(0);
+
+      // The serialised innerHTML must be HTML-escaped, not a live script tag
+      expect(heading.innerHTML).not.toContain("<script>");
+      expect(heading.innerHTML).toContain("&lt;script&gt;");
+    });
+
+    it("renders an HTML-like transaction title as escaped text, not as DOM elements", async () => {
+      const user = userEvent.setup();
+      const htmlTitle = '<img src=x onerror=alert(1)>';
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: htmlTitle })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      // The title heading is accessible by its full text content
+      const titleHeading = screen.getByRole("heading", { level: 3, name: htmlTitle });
+      expect(titleHeading).toBeInTheDocument();
+
+      // No real img elements with an onerror attribute should exist in the document
+      expect(document.querySelector("img")).toBeNull();
+
+      // The heading contains only a text node (no child element)
+      expect(titleHeading.childElementCount).toBe(0);
+    });
+
+    it("renders HTML-like transaction notes as escaped text, not as DOM elements", async () => {
+      const user = userEvent.setup();
+      const htmlNotes = '<b onclick="alert(2)">click me</b>';
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [
+              createTransaction("tx-1", "member-1", 5000, "member_owes_user", {
+                title: "ארוחה",
+                notes: htmlNotes,
+              }),
+            ],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      // The notes text must be present as a text node
+      const notesEl = screen.getByText(htmlNotes);
+      expect(notesEl).toBeInTheDocument();
+
+      // No real <b> element with onclick should have been injected by user content
+      expect(document.querySelector("b[onclick]")).toBeNull();
+    });
+  });
+
   describe("Accessibility — dialogs", () => {
     it("reset dialog: all inputs have labels and dialog has a title", async () => {
       const user = userEvent.setup();

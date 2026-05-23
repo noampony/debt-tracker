@@ -249,6 +249,36 @@ describe("DELETE /api/transactions/:id", () => {
   });
 });
 
+describe("Security — backend stores HTML-like content as plain text", () => {
+  it("accepts an HTML-like transaction title and returns it as a plain JSON string", async () => {
+    const { token } = await createTestUser(app);
+    const member = await createTestMember(app, token);
+    const htmlTitle = '<script>alert("xss")</script>';
+
+    const res = await createTestTransaction(app, token, member.id, { title: htmlTitle });
+
+    expect(res.status).toBe(201);
+    // The title is stored and returned as-is — the backend does not execute or transform HTML
+    expect(res.body.title).toBe(htmlTitle);
+    // The response is JSON (not HTML), so no rendering happens at this layer
+    expect(res.headers["content-type"]).toMatch(/application\/json/);
+  });
+
+  it("accepts an HTML-like member name and returns it as a plain JSON string", async () => {
+    const { token } = await createTestUser(app);
+    const htmlName = "<img src=x onerror=alert(1)>";
+
+    const res = await request(app)
+      .post("/api/members")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: htmlName });
+
+    expect(res.status).toBe(201);
+    expect(res.body.name).toBe(htmlName);
+    expect(res.headers["content-type"]).toMatch(/application\/json/);
+  });
+});
+
 describe("GET /api/members/:memberId/transactions", () => {
   it("returns transactions for a member sorted newest-first", async () => {
     const { token } = await createTestUser(app);
