@@ -1108,7 +1108,7 @@ Definition of Done:
 
 # 12. Accessibility
 
-* [ ] Add accessible labels for all inputs and buttons.
+* [x] Add accessible labels for all inputs and buttons.
 
 Description:
 Ensure the app is usable with assistive technologies.
@@ -1121,7 +1121,9 @@ Definition of Done:
 
 * Form errors are associated with relevant fields where practical.
 
-* [ ] Make dialogs accessible.
+All inputs have `<label>` elements (via the `TextInput` component or explicit `htmlFor`). Radio buttons are wrapped in `<label>`. Textareas have `htmlFor` labels. All buttons have visible Hebrew text — no icon-only buttons exist. Form fields use `aria-invalid` + `aria-describedby` wired to error `<p id>` elements. 9 accessibility-focused tests added to `src/tests/App.test.tsx`.
+
+* [x] Make dialogs accessible.
 
 Description:
 Confirmation dialogs must behave accessibly.
@@ -1138,7 +1140,9 @@ Definition of Done:
 
 * Focus returns to the triggering control after close where practical.
 
-* [ ] Verify keyboard navigation.
+Created `src/components/primitives/Dialog.tsx` — a reusable component with `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, focus-on-open (first focusable child), Tab/Shift+Tab focus trap, Escape-to-close, and focus-return-to-trigger on close. All three confirmation dialogs (reset debt, delete member, delete transaction) now use this component. Tests verify focus-in, Escape, and focus-return behaviors.
+
+* [x] Verify keyboard navigation.
 
 Description:
 The app should be usable with keyboard navigation.
@@ -1148,6 +1152,8 @@ Definition of Done:
 * Main actions are reachable by keyboard.
 * Focus order is logical in RTL layout.
 * Visible focus indication exists.
+
+All interactive elements (buttons, inputs, selects, textareas, radio buttons) are keyboard-reachable via Tab. Focus order follows DOM order which matches the logical RTL reading direction. Updated `global.css`: changed `:focus` to `:focus-visible` for form fields for cleaner keyboard-only outlines; added `:focus-within` highlight for radio group label rows; suppressed redundant outline on the `[role="dialog"]` container. Verified that Tab order in dialogs (Cancel → Confirm) is correct for RTL.
 
 ---
 

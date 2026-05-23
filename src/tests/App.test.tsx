@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { App } from "../app/App";
@@ -1333,5 +1333,215 @@ describe("App", () => {
     // Dialog should close after resolution
     expect(await screen.findByRole("button", { name: ui.members.resetDebt })).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: ui.members.resetDialogTitle })).not.toBeInTheDocument();
+  });
+
+  describe("Accessibility — dialogs", () => {
+    it("reset dialog: all inputs have labels and dialog has a title", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("transaction-1", "member-1", 5000)],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.resetDebt }));
+
+      const dialog = screen.getByRole("dialog", { name: ui.members.resetDialogTitle });
+      expect(dialog).toBeInTheDocument();
+      // Dialog has aria-modal
+      expect(dialog).toHaveAttribute("aria-modal", "true");
+      // Dialog title element is present
+      expect(within(dialog).getByText(ui.members.resetDialogTitle)).toBeInTheDocument();
+    });
+
+    it("reset dialog: focus moves into dialog when opened", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("transaction-1", "member-1", 5000)],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.resetDebt }));
+
+      // Focus should be inside the dialog on the first focusable element (cancel button)
+      await waitFor(() => {
+        const firstButton = screen.getByRole("button", { name: ui.members.resetDialogCancel });
+        expect(firstButton).toHaveFocus();
+      });
+    });
+
+    it("reset dialog: Escape key closes dialog without performing reset", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("transaction-1", "member-1", 5000)],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.resetDebt }));
+
+      expect(screen.getByRole("dialog", { name: ui.members.resetDialogTitle })).toBeInTheDocument();
+
+      await user.keyboard("{Escape}");
+
+      expect(screen.queryByRole("dialog", { name: ui.members.resetDialogTitle })).not.toBeInTheDocument();
+      // Balance should be unchanged
+      const balancePanel = screen.getByText(ui.members.currentBalance).closest(".balance-panel") as HTMLElement;
+      expect(balancePanel).toHaveTextContent("דני חייב לך");
+    });
+
+    it("reset dialog: focus returns to trigger button after dialog closes", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("transaction-1", "member-1", 5000)],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      const resetButton = screen.getByRole("button", { name: ui.members.resetDebt });
+      await user.click(resetButton);
+      await user.click(screen.getByRole("button", { name: ui.members.resetDialogCancel }));
+
+      // Focus returns to the reset button that triggered the dialog
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: ui.members.resetDebt })).toHaveFocus();
+      });
+    });
+
+    it("delete member dialog: Escape key closes dialog without deleting", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+      await user.click(screen.getByRole("button", { name: ui.members.deleteName }));
+
+      expect(screen.getByRole("dialog", { name: ui.members.deleteConfirmTitle })).toBeInTheDocument();
+
+      await user.keyboard("{Escape}");
+
+      expect(screen.queryByRole("dialog", { name: ui.members.deleteConfirmTitle })).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2, name: "דני" })).toBeInTheDocument();
+    });
+
+    it("delete transaction dialog: Escape key closes dialog without deleting", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository(
+            [createMember("member-1", "דני")],
+            [createTransaction("tx-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+          )}
+        />,
+      );
+
+      const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(
+        ".card",
+      ) as HTMLElement;
+      await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+      const history = screen.getByRole("heading", { level: 2, name: ui.transaction.historyTitle }).closest(
+        "section",
+      ) as HTMLElement;
+      await user.click(within(history).getByRole("button", { name: ui.actions.delete }));
+
+      expect(
+        screen.getByRole("dialog", { name: ui.transaction.deleteTransactionConfirmTitle }),
+      ).toBeInTheDocument();
+
+      await user.keyboard("{Escape}");
+
+      expect(
+        screen.queryByRole("dialog", { name: ui.transaction.deleteTransactionConfirmTitle }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 3, name: "ארוחה" })).toBeInTheDocument();
+    });
+
+    it("add transaction form: all fields have labeled inputs", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App repository={createMemoryRepository([createMember("member-1", "דני")])} />,
+      );
+
+      await user.click(screen.getAllByRole("button", { name: ui.actions.newTransaction })[0]);
+
+      // All inputs must be accessible by their label text
+      expect(screen.getByLabelText(ui.transaction.memberLabel)).toBeInTheDocument();
+      expect(screen.getByLabelText(ui.transaction.amountLabel)).toBeInTheDocument();
+      expect(screen.getByLabelText(ui.transaction.memberOwesUserLabel)).toBeInTheDocument();
+      expect(screen.getByLabelText(ui.transaction.userOwesMemberLabel)).toBeInTheDocument();
+      expect(screen.getByLabelText(ui.transaction.reasonLabel)).toBeInTheDocument();
+      expect(screen.getByLabelText(ui.transaction.dateLabel)).toBeInTheDocument();
+      expect(screen.getByLabelText(ui.transaction.notesLabel)).toBeInTheDocument();
+    });
+
+    it("add member form: name input has a label", async () => {
+      const user = userEvent.setup();
+
+      render(<App repository={createMemoryRepository()} />);
+
+      await user.click(screen.getByRole("button", { name: ui.actions.addMember }));
+
+      expect(screen.getByLabelText(ui.members.nameLabel)).toBeInTheDocument();
+    });
+
+    it("form errors are associated with their fields via aria-describedby", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <App
+          repository={createMemoryRepository([createMember("member-1", "דני")])}
+        />,
+      );
+
+      await user.click(screen.getAllByRole("button", { name: ui.actions.newTransaction })[0]);
+      await user.click(screen.getByRole("button", { name: ui.actions.save }));
+
+      // Amount error should be associated with the amount field
+      const amountInput = await screen.findByLabelText(ui.transaction.amountLabel);
+      expect(amountInput).toHaveAttribute("aria-invalid", "true");
+      const amountErrorId = amountInput.getAttribute("aria-describedby");
+      expect(amountErrorId).toBeDefined();
+      // The error element with that id exists in the DOM
+      expect(document.getElementById(amountErrorId!)).toBeInTheDocument();
+    });
   });
 });

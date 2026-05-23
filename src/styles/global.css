@@ -470,12 +470,29 @@ p {
   min-height: 20px;
 }
 
-.field input:focus,
-.field select:focus,
-.field textarea:focus,
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
 .button:focus-visible {
   outline: 3px solid rgba(199, 124, 57, 0.35);
   outline-offset: 2px;
+}
+
+/* Highlight the radio-group label row when its radio input is focused via keyboard */
+.radio-group label:focus-within {
+  outline: 3px solid rgba(199, 124, 57, 0.35);
+  outline-offset: 2px;
+  border-color: rgba(199, 124, 57, 0.55);
+}
+
+/* The radio input itself should not show a double outline */
+.radio-group input:focus-visible {
+  outline: none;
+}
+
+/* Dialog container – suppressed outline since it is programmatically focused only */
+[role="dialog"]:focus {
+  outline: none;
 }
 
 @media (min-width: 520px) {
