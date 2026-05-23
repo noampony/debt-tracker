@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
 import { authMiddleware } from "../lib/middleware.js";
-import { createTransactionSchema } from "../lib/validation.js";
+import { createTransactionSchema, updateTransactionSchema } from "../lib/validation.js";
 import { calculateMemberBalance } from "../lib/balance.js";
 
 const router = Router();
@@ -134,6 +134,62 @@ router.post("/members/:memberId/reset", async (req, res) => {
   });
 
   res.status(201).json(resetTransaction);
+});
+
+/**
+ * PATCH /api/transactions/:id
+ * Updates editable fields of a transaction (amount, direction, title, notes, date).
+ * The memberId and type fields are immutable after creation.
+ */
+router.patch("/transactions/:id", async (req, res) => {
+  const { id } = req.params;
+
+  // Verify the transaction belongs to the authenticated user via its member
+  const existing = await db.transaction.findFirst({
+    where: { id, member: { userId: req.userId } },
+    select: TX_SELECT,
+  });
+  if (!existing) {
+    res.status(404).json({ error: "Transaction not found" });
+    return;
+  }
+
+  const result = updateTransactionSchema.safeParse(req.body);
+  if (!result.success) {
+    res.status(400).json({ error: result.error.issues[0].message });
+    return;
+  }
+
+  const { amountMinor, direction, title, notes, transactionDate } = result.data;
+
+  const updated = await db.transaction.update({
+    where: { id },
+    data: { amountMinor, direction, title, notes, transactionDate, updatedAt: new Date() },
+    select: TX_SELECT,
+  });
+
+  res.json(updated);
+});
+
+/**
+ * DELETE /api/transactions/:id
+ * Permanently deletes a single transaction.
+ * Authorization: transaction must belong to the authenticated user.
+ */
+router.delete("/transactions/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const existing = await db.transaction.findFirst({
+    where: { id, member: { userId: req.userId } },
+    select: { id: true },
+  });
+  if (!existing) {
+    res.status(404).json({ error: "Transaction not found" });
+    return;
+  }
+
+  await db.transaction.delete({ where: { id } });
+  res.status(204).send();
 });
 
 export { router as transactionsRouter };

@@ -86,5 +86,24 @@ router.patch("/members/:id", async (req, res) => {
   res.json(member);
 });
 
-export { router as membersRouter };
+// DELETE /api/members/:id — delete a member and all their transactions
+router.delete("/members/:id", async (req, res) => {
+  const memberId = req.params.id;
 
+  const existing = await db.member.findFirst({
+    where: { id: memberId, userId: req.userId },
+    select: { id: true },
+  });
+  if (!existing) {
+    res.status(404).json({ error: "Member not found" });
+    return;
+  }
+
+  // Delete transactions first (FK constraint: Transaction → Member ON DELETE RESTRICT)
+  await db.transaction.deleteMany({ where: { memberId } });
+  await db.member.delete({ where: { id: memberId } });
+
+  res.status(204).send();
+});
+
+export { router as membersRouter };

@@ -384,6 +384,16 @@ p {
   background: transparent;
 }
 
+.button-danger {
+  color: #ffffff;
+  background: #9f2626;
+  border-color: #9f2626;
+}
+
+.button-danger:not(:disabled):hover {
+  background: #821f1f;
+}
+
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.58;

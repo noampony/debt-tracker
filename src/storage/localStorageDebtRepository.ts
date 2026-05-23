@@ -169,6 +169,20 @@ export function createLocalStorageDebtRepository(
       });
     },
 
+    async deleteMember(memberId) {
+      const memberCollection = readCollection(storage, "members", isMember);
+      writeCollection(storage, "members", {
+        ...memberCollection,
+        records: memberCollection.records.filter((m) => m.id !== memberId),
+      });
+      // Cascade-delete all transactions for this member
+      const txCollection = readCollection(storage, "transactions", isTransaction);
+      writeCollection(storage, "transactions", {
+        ...txCollection,
+        records: txCollection.records.filter((tx) => tx.memberId !== memberId),
+      });
+    },
+
     async getTransactions() {
       return readCollection(storage, "transactions", isTransaction).records.map(copyTransaction);
     },
@@ -180,6 +194,25 @@ export function createLocalStorageDebtRepository(
         records: [...collection.records, copyTransaction(transaction)],
       });
       return copyTransaction(transaction);
+    },
+
+    async updateTransaction(transaction) {
+      const collection = readCollection(storage, "transactions", isTransaction);
+      writeCollection(storage, "transactions", {
+        ...collection,
+        records: collection.records.map((tx) =>
+          tx.id === transaction.id ? copyTransaction(transaction) : tx,
+        ),
+      });
+      return copyTransaction(transaction);
+    },
+
+    async deleteTransaction(transactionId) {
+      const collection = readCollection(storage, "transactions", isTransaction);
+      writeCollection(storage, "transactions", {
+        ...collection,
+        records: collection.records.filter((tx) => tx.id !== transactionId),
+      });
     },
 
     async resetMemberDebt(memberId) {
