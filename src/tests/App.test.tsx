@@ -189,6 +189,11 @@ function getSummaryAmount(card: HTMLElement): string | null {
   return card.querySelector(".summary-amount")?.textContent ?? null;
 }
 
+function getDatalistOptions(container: HTMLElement, datalistId: string): string[] {
+  const datalist = container.querySelector(`datalist#${datalistId}`);
+  return Array.from(datalist?.querySelectorAll("option") ?? []).map((option) => option.value);
+}
+
 describe("App", () => {
   it("renders the Hebrew root page content", async () => {
     render(<App repository={emptyRepository} />);
@@ -355,10 +360,9 @@ describe("App", () => {
     expect(screen.getAllByRole("heading", { level: 3, name: "דני" })).toHaveLength(1);
   });
 
-  it("opens the add transaction form with today's date and Hebrew labels", async () => {
+  it("opens the add transaction form with today's date, Hebrew labels, and common reason suggestions", async () => {
     const user = userEvent.setup();
-
-    render(
+    const { container } = render(
       <App
         repository={createMemoryRepository([
           {
@@ -377,7 +381,8 @@ describe("App", () => {
     expect(screen.getByLabelText(ui.transaction.memberLabel)).toBeInTheDocument();
     expect(screen.getByLabelText(ui.transaction.amountLabel)).toHaveAttribute("inputmode", "decimal");
     expect(screen.getByText(ui.transaction.directionLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(ui.transaction.reasonLabel)).toBeInTheDocument();
+    expect(screen.getByLabelText(ui.transaction.reasonLabel)).toHaveAttribute("list", "transaction-reason-suggestions");
+    expect(getDatalistOptions(container, "transaction-reason-suggestions")).toEqual(ui.transaction.commonReasons);
     expect((screen.getByLabelText(ui.transaction.dateLabel) as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(screen.getByLabelText(ui.transaction.notesLabel)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: ui.actions.cancel })).toBeInTheDocument();
@@ -425,7 +430,7 @@ describe("App", () => {
     expect(await screen.findByText(expectedError)).toBeInTheDocument();
   });
 
-  it("creates a transaction and updates the member balance immediately", async () => {
+  it("creates a transaction with a custom reason and updates the member balance immediately", async () => {
     const user = userEvent.setup();
 
     render(
@@ -1058,10 +1063,10 @@ describe("App", () => {
       expect(within(txCard).getByRole("button", { name: ui.actions.delete })).toBeInTheDocument();
     });
 
-    it("opens inline edit form with pre-filled values", async () => {
+    it("opens inline edit form with pre-filled values and common reason suggestions", async () => {
       const user = userEvent.setup();
 
-      render(
+      const { container } = render(
         <App
           repository={createMemoryRepository(
             [createMember("member-1", "דני")],
@@ -1088,9 +1093,14 @@ describe("App", () => {
       expect(screen.getByRole("form", { name: ui.transaction.editTransactionTitle })).toBeInTheDocument();
       expect(screen.getByLabelText(ui.transaction.amountLabel)).toHaveValue("50");
       expect(screen.getByLabelText(ui.transaction.reasonLabel)).toHaveValue("ארוחה");
+      expect(screen.getByLabelText(ui.transaction.reasonLabel)).toHaveAttribute(
+        "list",
+        "edit-tx-reason-suggestions-tx-1",
+      );
+      expect(getDatalistOptions(container, "edit-tx-reason-suggestions-tx-1")).toEqual(ui.transaction.commonReasons);
     });
 
-    it("saves edited transaction and updates balance", async () => {
+    it("saves edited transaction with a common reason and updates balance", async () => {
       const user = userEvent.setup();
 
       render(
@@ -1117,10 +1127,10 @@ describe("App", () => {
       await user.type(amountInput, "100");
       const titleInput = screen.getByLabelText(ui.transaction.reasonLabel);
       await user.clear(titleInput);
-      await user.type(titleInput, "ארוחת ערב");
+      await user.type(titleInput, "מתנה");
       await user.click(screen.getByRole("button", { name: ui.actions.save }));
 
-      expect(await screen.findByRole("heading", { level: 3, name: "ארוחת ערב" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { level: 3, name: "מתנה" })).toBeInTheDocument();
       expect(screen.queryByRole("heading", { level: 3, name: "ארוחה" })).not.toBeInTheDocument();
       // Balance updated: ₪100 instead of ₪50
       expect(screen.getAllByText(/דני חייב לך/).some((el) => el.textContent?.includes("100.00"))).toBe(true);

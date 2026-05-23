@@ -64,6 +64,7 @@ export const ui = {
     dateLabel: "תאריך",
     reasonLabel: "סיבה",
     reasonPlaceholder: "לדוגמה: ארוחת צהריים",
+    commonReasons: ["אוכל", "נסיעה", "קניות", "מתנה", "שכר דירה", "אחר"],
     notesLabel: "הערות",
     notesPlaceholder: "פרטים נוספים, אם צריך",
     memberRequired: "יש לבחור איש קשר",
