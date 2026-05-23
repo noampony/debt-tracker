@@ -4,6 +4,7 @@ import { ui } from "../i18n/he";
 import { AppShell } from "../components/layout/AppShell";
 import { Button } from "../components/primitives/Button";
 import { Card } from "../components/primitives/Card";
+import { Dialog } from "../components/primitives/Dialog";
 import { TextInput } from "../components/primitives/TextInput";
 import type { Member } from "../features/members/types";
 import { sortMembersByBalance } from "../features/members/sorting";
@@ -610,34 +611,32 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   }
 
   function renderResetDialog() {
-    if (!selectedMember || !isResetDialogOpen) {
+    if (!selectedMember) {
       return null;
     }
 
     const dialogBody = ui.members.resetDialogBody.replace("{memberName}", selectedMember.name);
 
     return (
-      <div className="dialog-backdrop" role="presentation">
-        <div role="dialog" aria-modal="true" aria-labelledby="reset-dialog-title">
-          <Card className="dialog-card">
-            <h3 id="reset-dialog-title">{ui.members.resetDialogTitle}</h3>
-            <p>{dialogBody}</p>
-            {resetError && (
-              <p className="field-error" role="alert">
-                {resetError}
-              </p>
-            )}
-            <div className="button-row">
-              <Button type="button" variant="ghost" onClick={closeResetDialog} disabled={isResetting}>
-                {ui.members.resetDialogCancel}
-              </Button>
-              <Button type="button" variant="secondary" onClick={handleConfirmReset} disabled={isResetting}>
-                {isResetting ? ui.loading.resetting : ui.members.resetDialogConfirm}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
+      <Dialog isOpen={isResetDialogOpen} titleId="reset-dialog-title" onClose={closeResetDialog}>
+        <Card className="dialog-card">
+          <h3 id="reset-dialog-title">{ui.members.resetDialogTitle}</h3>
+          <p>{dialogBody}</p>
+          {resetError && (
+            <p className="field-error" role="alert">
+              {resetError}
+            </p>
+          )}
+          <div className="button-row">
+            <Button type="button" variant="ghost" onClick={closeResetDialog} disabled={isResetting}>
+              {ui.members.resetDialogCancel}
+            </Button>
+            <Button type="button" variant="secondary" onClick={handleConfirmReset} disabled={isResetting}>
+              {isResetting ? ui.loading.resetting : ui.members.resetDialogConfirm}
+            </Button>
+          </div>
+        </Card>
+      </Dialog>
     );
   }
 
@@ -790,67 +789,66 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   }
 
   function renderDeleteMemberDialog() {
-    if (!selectedMember || !isDeleteMemberDialogOpen) return null;
+    if (!selectedMember) return null;
     const dialogBody = ui.members.deleteConfirmBody.replace("{memberName}", selectedMember.name);
     return (
-      <div className="dialog-backdrop" role="presentation">
-        <div role="dialog" aria-modal="true" aria-labelledby="delete-member-dialog-title">
-          <Card className="dialog-card">
-            <h3 id="delete-member-dialog-title">{ui.members.deleteConfirmTitle}</h3>
-            <p>{dialogBody}</p>
-            {deleteMemberError && (
-              <p className="field-error" role="alert">
-                {deleteMemberError}
-              </p>
-            )}
-            <div className="button-row">
-              <Button type="button" variant="ghost" onClick={closeDeleteMemberDialog} disabled={isDeletingMember}>
-                {ui.actions.cancel}
-              </Button>
-              <Button type="button" variant="danger" onClick={handleConfirmDeleteMember} disabled={isDeletingMember}>
-                {isDeletingMember ? ui.loading.deletingMember : ui.members.deleteConfirm}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
+      <Dialog isOpen={isDeleteMemberDialogOpen} titleId="delete-member-dialog-title" onClose={closeDeleteMemberDialog}>
+        <Card className="dialog-card">
+          <h3 id="delete-member-dialog-title">{ui.members.deleteConfirmTitle}</h3>
+          <p>{dialogBody}</p>
+          {deleteMemberError && (
+            <p className="field-error" role="alert">
+              {deleteMemberError}
+            </p>
+          )}
+          <div className="button-row">
+            <Button type="button" variant="ghost" onClick={closeDeleteMemberDialog} disabled={isDeletingMember}>
+              {ui.actions.cancel}
+            </Button>
+            <Button type="button" variant="danger" onClick={handleConfirmDeleteMember} disabled={isDeletingMember}>
+              {isDeletingMember ? ui.loading.deletingMember : ui.members.deleteConfirm}
+            </Button>
+          </div>
+        </Card>
+      </Dialog>
     );
   }
 
   function renderDeleteTransactionDialog() {
-    if (!deleteTransactionId) return null;
     return (
-      <div className="dialog-backdrop" role="presentation">
-        <div role="dialog" aria-modal="true" aria-labelledby="delete-tx-dialog-title">
-          <Card className="dialog-card">
-            <h3 id="delete-tx-dialog-title">{ui.transaction.deleteTransactionConfirmTitle}</h3>
-            <p>{ui.transaction.deleteTransactionConfirmBody}</p>
-            {deleteTransactionError && (
-              <p className="field-error" role="alert">
-                {deleteTransactionError}
-              </p>
-            )}
-            <div className="button-row">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={closeDeleteTransactionDialog}
-                disabled={isDeletingTransaction}
-              >
-                {ui.actions.cancel}
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                onClick={handleConfirmDeleteTransaction}
-                disabled={isDeletingTransaction}
-              >
-                {isDeletingTransaction ? ui.loading.deletingTransaction : ui.transaction.deleteTransactionConfirm}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
+      <Dialog
+        isOpen={!!deleteTransactionId}
+        titleId="delete-tx-dialog-title"
+        onClose={closeDeleteTransactionDialog}
+      >
+        <Card className="dialog-card">
+          <h3 id="delete-tx-dialog-title">{ui.transaction.deleteTransactionConfirmTitle}</h3>
+          <p>{ui.transaction.deleteTransactionConfirmBody}</p>
+          {deleteTransactionError && (
+            <p className="field-error" role="alert">
+              {deleteTransactionError}
+            </p>
+          )}
+          <div className="button-row">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeDeleteTransactionDialog}
+              disabled={isDeletingTransaction}
+            >
+              {ui.actions.cancel}
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleConfirmDeleteTransaction}
+              disabled={isDeletingTransaction}
+            >
+              {isDeletingTransaction ? ui.loading.deletingTransaction : ui.transaction.deleteTransactionConfirm}
+            </Button>
+          </div>
+        </Card>
+      </Dialog>
     );
   }
 
