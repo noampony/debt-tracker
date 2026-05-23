@@ -638,7 +638,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
             </p>
           )}
           <div className="button-row">
-            <Button type="button" variant="ghost" onClick={closeResetDialog} disabled={isResetting}>
+            <Button type="button" variant="white" onClick={closeResetDialog} disabled={isResetting}>
               {ui.members.resetDialogCancel}
             </Button>
             <Button type="button" variant="secondary" onClick={handleConfirmReset} disabled={isResetting}>
@@ -790,7 +790,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
               <Button type="submit" disabled={isSavingTransaction}>
                 {isSavingTransaction ? ui.loading.savingTransaction : ui.actions.save}
               </Button>
-              <Button type="button" variant="ghost" onClick={closeTransactionForm} disabled={isSavingTransaction}>
+              <Button type="button" variant="white" onClick={closeTransactionForm} disabled={isSavingTransaction}>
                 {ui.actions.cancel}
               </Button>
             </div>
@@ -814,7 +814,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
             </p>
           )}
           <div className="button-row">
-            <Button type="button" variant="ghost" onClick={closeDeleteMemberDialog} disabled={isDeletingMember}>
+            <Button type="button" variant="white" onClick={closeDeleteMemberDialog} disabled={isDeletingMember}>
               {ui.actions.cancel}
             </Button>
             <Button type="button" variant="danger" onClick={handleConfirmDeleteMember} disabled={isDeletingMember}>
@@ -844,7 +844,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
           <div className="button-row">
             <Button
               type="button"
-              variant="ghost"
+              variant="white"
               onClick={closeDeleteTransactionDialog}
               disabled={isDeletingTransaction}
             >
@@ -963,7 +963,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
             <Button type="submit" disabled={isSavingEditTransaction}>
               {isSavingEditTransaction ? ui.loading.savingEditTransaction : ui.actions.save}
             </Button>
-            <Button type="button" variant="ghost" onClick={closeEditTransaction} disabled={isSavingEditTransaction}>
+            <Button type="button" variant="white" onClick={closeEditTransaction} disabled={isSavingEditTransaction}>
               {ui.actions.cancel}
             </Button>
           </div>
@@ -979,6 +979,9 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
       <AppShell title={ui.app.title} subtitle={ui.app.subtitle} userEmail={userEmail} onLogout={onLogout}>
         <section className="section-stack" aria-labelledby="member-detail-title">
           <Button type="button" variant="ghost" className="back-button" onClick={() => setSelectedMemberId("")}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flexShrink: 0}}>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
             {ui.actions.back}
           </Button>
           <Card className="member-detail-card">
@@ -1012,15 +1015,43 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                   <Button type="submit" disabled={isSavingEditMember}>
                     {isSavingEditMember ? ui.loading.savingMember : ui.actions.save}
                   </Button>
-                  <Button type="button" variant="ghost" onClick={closeEditMemberForm} disabled={isSavingEditMember}>
+                  <Button type="button" variant="white" onClick={closeEditMemberForm} disabled={isSavingEditMember}>
                     {ui.actions.cancel}
                   </Button>
                 </div>
               </form>
             ) : (
               <>
-                <p className="eyebrow">{ui.members.detailTitle}</p>
-                <h2 id="member-detail-title">{selectedMember.name}</h2>
+                <div className="member-detail-header">
+                  <p className="eyebrow">{ui.members.detailTitle}</p>
+                  <button
+                    type="button"
+                    className="icon-button icon-button-danger"
+                    onClick={openDeleteMemberDialog}
+                    aria-label={ui.members.deleteName}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="member-name-row">
+                  <h2 id="member-detail-title">{selectedMember.name}</h2>
+                  <button
+                    type="button"
+                    className="icon-button icon-button-edit"
+                    onClick={openEditMemberForm}
+                    aria-label={ui.members.editName}
+                  >
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                </div>
                 <div className="balance-panel">
                   <p className="summary-label">{ui.members.currentBalance}</p>
                   <p>{formatMemberBalance(selectedMember, selectedMemberBalanceMinor)}</p>
@@ -1037,12 +1068,6 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                     aria-describedby="reset-debt-helper"
                   >
                     {ui.members.resetDebt}
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={openEditMemberForm}>
-                    {ui.members.editName}
-                  </Button>
-                  <Button type="button" variant="danger" onClick={openDeleteMemberDialog}>
-                    {ui.members.deleteName}
                   </Button>
                 </div>
                 <p className="helper-text" id="reset-debt-helper">
@@ -1098,7 +1123,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                     )}
                   </dl>
                   <div className="button-row transaction-card-actions">
-                    <Button type="button" variant="ghost" onClick={() => openEditTransaction(transaction)}>
+                    <Button type="button" variant="white" onClick={() => openEditTransaction(transaction)}>
                       {ui.actions.edit}
                     </Button>
                     <Button
@@ -1187,7 +1212,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                 <Button type="submit" disabled={isSavingMember}>
                   {isSavingMember ? ui.loading.savingMember : ui.actions.save}
                 </Button>
-                <Button type="button" variant="ghost" onClick={closeAddMemberForm} disabled={isSavingMember}>
+                <Button type="button" variant="white" onClick={closeAddMemberForm} disabled={isSavingMember}>
                   {ui.actions.cancel}
                 </Button>
               </div>
@@ -1215,12 +1240,12 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                   <p>{formatMemberBalance(member, member.balanceMinor)}</p>
                 </div>
                 <div className="member-actions">
-                  <Button type="button" variant="secondary" onClick={() => openTransactionForm(member.id)}>
+                  <Button type="button" onClick={() => openTransactionForm(member.id)}>
                     {ui.actions.addTransaction}
                   </Button>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="white"
                     onClick={() => {
                       setSelectedMemberId(member.id);
                       setMemberActionMessage("");
