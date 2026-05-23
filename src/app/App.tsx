@@ -14,6 +14,7 @@ import { createId } from "../lib/ids";
 import { formatIls, parseIlsInputToMinor } from "../lib/money";
 import type { DebtRepository } from "../storage/debtRepository";
 import type { TransactionDirection } from "../features/transactions/types";
+import { createResetAdjustmentTransaction } from "../features/transactions/reset";
 
 type AppProps = {
   repository: DebtRepository;
@@ -80,6 +81,7 @@ export function App({ repository }: AppProps) {
   const [transactionNotes, setTransactionNotes] = useState("");
   const [transactionErrors, setTransactionErrors] = useState<TransactionFormErrors>({});
   const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const memberListItems = useMemo(
@@ -317,6 +319,69 @@ export function App({ repository }: AppProps) {
     closeTransactionForm();
   }
 
+  function openResetDialog() {
+    if (selectedMemberBalanceMinor === 0) {
+      return;
+    }
+
+    setIsResetDialogOpen(true);
+  }
+
+  function closeResetDialog() {
+    setIsResetDialogOpen(false);
+  }
+
+  async function handleConfirmReset() {
+    if (!selectedMember) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const resetTransaction = createResetAdjustmentTransaction({
+      id: createId(),
+      memberId: selectedMember.id,
+      balanceMinor: selectedMemberBalanceMinor,
+      transactionDate: getTodayDateIso(),
+      createdAt: now,
+    });
+
+    if (!resetTransaction) {
+      closeResetDialog();
+      return;
+    }
+
+    await repository.createTransaction(resetTransaction);
+    setTransactions((currentTransactions) => [...currentTransactions, resetTransaction]);
+    closeResetDialog();
+  }
+
+  function renderResetDialog() {
+    if (!selectedMember || !isResetDialogOpen) {
+      return null;
+    }
+
+    const dialogBody = ui.members.resetDialogBody.replace("{memberName}", selectedMember.name);
+
+    return (
+      <div className="dialog-backdrop" role="presentation">
+        <div role="dialog" aria-modal="true" aria-labelledby="reset-dialog-title">
+          <Card className="dialog-card">
+            <h3 id="reset-dialog-title">{ui.members.resetDialogTitle}</h3>
+            <p>{dialogBody}</p>
+            <div className="button-row">
+              <Button type="button" variant="ghost" onClick={closeResetDialog}>
+                {ui.members.resetDialogCancel}
+              </Button>
+              <Button type="button" variant="secondary" onClick={handleConfirmReset}>
+                {ui.members.resetDialogConfirm}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   function renderTransactionForm() {
     if (!isTransactionFormOpen) {
       return null;
@@ -458,6 +523,8 @@ export function App({ repository }: AppProps) {
   }
 
   if (selectedMember) {
+    const isResetDisabled = selectedMemberBalanceMinor === 0;
+
     return (
       <AppShell title={ui.app.title} subtitle={ui.app.subtitle}>
         <section className="section-stack" aria-labelledby="member-detail-title">
@@ -475,15 +542,23 @@ export function App({ repository }: AppProps) {
               <Button type="button" onClick={() => openTransactionForm(selectedMember.id)}>
                 {ui.actions.addTransaction}
               </Button>
-              <Button type="button" variant="secondary" disabled aria-describedby="reset-debt-placeholder">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={isResetDisabled}
+                onClick={openResetDialog}
+                aria-describedby="reset-debt-helper"
+              >
                 {ui.members.resetDebt}
               </Button>
             </div>
-            <p className="helper-text" id="reset-debt-placeholder">
-              {ui.members.resetPending}
+            <p className="helper-text" id="reset-debt-helper">
+              {isResetDisabled ? ui.members.resetDisabled : ui.members.resetHelp}
             </p>
           </Card>
         </section>
+
+        {renderResetDialog()}
 
         {renderTransactionForm()}
 

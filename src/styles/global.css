@@ -206,6 +206,36 @@ p {
   line-height: 1.45;
 }
 
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  align-items: end;
+  padding-block: 20px;
+  padding-inline: 16px;
+  background: rgba(34, 31, 27, 0.45);
+}
+
+.dialog-card {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  max-width: 480px;
+  width: 100%;
+  justify-self: center;
+}
+
+.dialog-card h3 {
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.dialog-card p {
+  color: #4f473f;
+  line-height: 1.5;
+}
+
 .history-list {
   min-width: 0;
 }
@@ -448,6 +478,10 @@ p {
     min-height: calc(100vh - 48px);
     border-radius: 8px;
     overflow: hidden;
+  }
+
+  .dialog-backdrop {
+    align-items: center;
   }
 }
 

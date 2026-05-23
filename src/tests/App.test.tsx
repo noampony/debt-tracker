@@ -42,6 +42,37 @@ function createMemoryRepository(
   };
 }
 
+function createInspectableMemoryRepository(
+  initialMembers: Member[] = [],
+  initialTransactions: Transaction[] = [],
+): { repository: DebtRepository; createdTransactions: Transaction[] } {
+  const members = [...initialMembers];
+  const transactions = [...initialTransactions];
+  const createdTransactions: Transaction[] = [];
+
+  return {
+    repository: {
+      getMembers: async () => [...members],
+      createMember: async (member) => {
+        members.push(member);
+      },
+      updateMember: async (member) => {
+        const memberIndex = members.findIndex((storedMember) => storedMember.id === member.id);
+
+        if (memberIndex >= 0) {
+          members[memberIndex] = member;
+        }
+      },
+      getTransactions: async () => [...transactions],
+      createTransaction: async (transaction) => {
+        createdTransactions.push(transaction);
+        transactions.push(transaction);
+      },
+    },
+    createdTransactions,
+  };
+}
+
 function createMember(id: string, name: string): Member {
   return {
     id,
@@ -367,7 +398,7 @@ describe("App", () => {
     expect(screen.getByLabelText(ui.transaction.amountLabel)).toHaveFocus();
   });
 
-  it("navigates to member detail, shows balance, reset placeholder, and returns to main screen", async () => {
+  it("navigates to member detail, shows balance, and returns to main screen", async () => {
     const user = userEvent.setup();
 
     render(
@@ -384,8 +415,7 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { level: 2, name: "דני" })).toBeInTheDocument();
     expect(screen.getAllByText(/דני חייב לך/).some((element) => element.textContent?.includes("50.00"))).toBe(true);
-    expect(screen.getByRole("button", { name: ui.members.resetDebt })).toBeDisabled();
-    expect(screen.getByText(ui.members.resetPending)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: ui.members.resetDebt })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: ui.actions.back }));
 
@@ -461,5 +491,76 @@ describe("App", () => {
     await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
 
     expect(screen.getByText(ui.transaction.historyEmpty)).toBeInTheDocument();
+  });
+
+  it("disables reset for an already-zero balance", async () => {
+    const user = userEvent.setup();
+
+    render(<App repository={createMemoryRepository([createMember("member-1", "דני")])} />);
+
+    const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(".card") as HTMLElement;
+    await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+
+    expect(screen.getByRole("button", { name: ui.members.resetDebt })).toBeDisabled();
+    expect(screen.getByText(ui.members.resetDisabled)).toBeInTheDocument();
+  });
+
+  it("opens reset dialog and cancel closes it without changing balance", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <App
+        repository={createMemoryRepository(
+          [createMember("member-1", "דני")],
+          [createTransaction("transaction-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+        )}
+      />,
+    );
+
+    const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(".card") as HTMLElement;
+    await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+    await user.click(screen.getByRole("button", { name: ui.members.resetDebt }));
+
+    expect(screen.getByRole("dialog", { name: ui.members.resetDialogTitle })).toBeInTheDocument();
+    expect(
+      screen.getByText("הפעולה תאפס את החוב מול דני ותוסיף עסקת איזון להיסטוריה. האם להמשיך?"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: ui.members.resetDialogCancel }));
+
+    expect(screen.queryByRole("dialog", { name: ui.members.resetDialogTitle })).not.toBeInTheDocument();
+    const balancePanel = screen.getByText(ui.members.currentBalance).closest(".balance-panel") as HTMLElement;
+    expect(balancePanel).toHaveTextContent("דני חייב לך");
+    expect(balancePanel).toHaveTextContent("50.00");
+    expect(screen.getByRole("heading", { level: 3, name: "ארוחה" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3, name: ui.members.resetDebt })).not.toBeInTheDocument();
+  });
+
+  it("confirms reset by creating a reset_adjustment transaction, preserving history, and zeroing balance", async () => {
+    const user = userEvent.setup();
+    const { repository, createdTransactions } = createInspectableMemoryRepository(
+      [createMember("member-1", "דני")],
+      [createTransaction("transaction-1", "member-1", 5000, "member_owes_user", { title: "ארוחה" })],
+    );
+
+    render(<App repository={repository} />);
+
+    const memberCard = (await screen.findByRole("heading", { level: 3, name: "דני" })).closest(".card") as HTMLElement;
+    await user.click(within(memberCard).getByRole("button", { name: ui.actions.viewDetails }));
+    await user.click(screen.getByRole("button", { name: ui.members.resetDebt }));
+    await user.click(screen.getByRole("button", { name: ui.members.resetDialogConfirm }));
+
+    expect(screen.queryByRole("dialog", { name: ui.members.resetDialogTitle })).not.toBeInTheDocument();
+    expect(screen.getByText("אין חוב פתוח מול דני")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "ארוחה" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: ui.members.resetDebt })).toBeInTheDocument();
+    expect(createdTransactions).toHaveLength(1);
+    expect(createdTransactions[0]).toMatchObject({
+      memberId: "member-1",
+      amountMinor: 5000,
+      direction: "user_owes_member",
+      title: ui.members.resetDebt,
+      type: "reset_adjustment",
+    });
   });
 });
