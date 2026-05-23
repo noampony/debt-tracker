@@ -55,6 +55,7 @@ export function AuthPage() {
     <div className="auth-viewport">
       <div className="auth-shell">
         <header className="auth-header">
+          <img className="app-logo auth-logo" src="/debt-tracker-logo.png" alt="" aria-hidden="true" />
           <h1>{ui.app.title}</h1>
           <p>{ui.app.subtitle}</p>
         </header>
@@ -119,4 +120,3 @@ export function AuthPage() {
     </div>
   );
 }
-

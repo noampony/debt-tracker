@@ -610,7 +610,7 @@ describe("App", () => {
 
     expect(screen.getByRole("dialog", { name: ui.members.resetDialogTitle })).toBeInTheDocument();
     expect(
-      screen.getByText("הפעולה תאפס את החוב מול דני ותוסיף עסקת איזון להיסטוריה. האם להמשיך?"),
+      screen.getByText("הפעולה תאפס את החוב מול דני ותוסיף תנועת איזון להיסטוריה. האם להמשיך?"),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: ui.members.resetDialogCancel }));
@@ -1385,8 +1385,9 @@ describe("App", () => {
       const titleHeading = screen.getByRole("heading", { level: 3, name: htmlTitle });
       expect(titleHeading).toBeInTheDocument();
 
-      // No real img elements with an onerror attribute should exist in the document
-      expect(document.querySelector("img")).toBeNull();
+      // No real img element should be created from the user-generated title
+      expect(titleHeading.querySelector("img")).toBeNull();
+      expect(document.querySelector("img[onerror]")).toBeNull();
 
       // The heading contains only a text node (no child element)
       expect(titleHeading.childElementCount).toBe(0);

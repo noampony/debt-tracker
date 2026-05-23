@@ -14,8 +14,13 @@ export function AppShell({ title, subtitle, userEmail, onLogout, children }: App
     <div className="app-viewport">
       <div className="app-shell">
         <header className="app-header">
-          <h1>{title}</h1>
-          <p>{subtitle}</p>
+          <div className="app-brand">
+            <img className="app-logo app-header-logo" src="/debt-tracker-logo.png" alt="" aria-hidden="true" />
+            <div className="app-brand-text">
+              <h1>{title}</h1>
+              <p>{subtitle}</p>
+            </div>
+          </div>
           {userEmail && onLogout && (
             <div className="app-header-user">
               <span className="app-header-email">{userEmail}</span>

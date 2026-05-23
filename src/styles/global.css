@@ -70,6 +70,33 @@ p {
   background: #255a52;
 }
 
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app-brand-text {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-logo {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.app-header-logo {
+  width: 54px;
+  height: 54px;
+  padding: 5px;
+  border-radius: 8px;
+  background: #fffaf3;
+}
+
 .app-header h1 {
   font-size: 2rem;
   line-height: 1.15;
@@ -528,8 +555,16 @@ p {
 }
 
 .auth-header {
+  display: grid;
+  justify-items: center;
   margin-block-end: 24px;
   text-align: center;
+}
+
+.auth-logo {
+  width: 92px;
+  height: 92px;
+  margin-block-end: 14px;
 }
 
 .auth-header h1 {
