@@ -9,7 +9,7 @@ import type { Member } from "../features/members/types";
 import { sortMembersByBalance } from "../features/members/sorting";
 import type { Transaction } from "../features/transactions/types";
 import { calculateBalanceSummary, calculateMemberBalance } from "../features/balances/balance";
-import { getTodayDateIso } from "../lib/dates";
+import { formatDate, getTodayDateIso } from "../lib/dates";
 import { createId } from "../lib/ids";
 import { formatIls, parseIlsInputToMinor } from "../lib/money";
 import type { DebtRepository } from "../storage/debtRepository";
@@ -38,6 +38,30 @@ function formatMemberBalance(member: Member, balanceMinor: number): string {
   return `אין חוב פתוח מול ${member.name}`;
 }
 
+function formatTransactionDirection(member: Member, transaction: Transaction): string {
+  if (transaction.direction === "member_owes_user") {
+    return `${member.name} חייב לך`;
+  }
+
+  return `אתה חייב ל${member.name}`;
+}
+
+function getTransactionSortTime(transaction: Transaction): number {
+  const transactionDateTime = Date.parse(transaction.transactionDate);
+
+  if (Number.isFinite(transactionDateTime)) {
+    return transactionDateTime;
+  }
+
+  const createdAtTime = Date.parse(transaction.createdAt);
+  return Number.isFinite(createdAtTime) ? createdAtTime : 0;
+}
+
+function getCreatedAtSortTime(transaction: Transaction): number {
+  const createdAtTime = Date.parse(transaction.createdAt);
+  return Number.isFinite(createdAtTime) ? createdAtTime : 0;
+}
+
 export function App({ repository }: AppProps) {
   const todayDateIso = getTodayDateIso();
   const amountInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +79,7 @@ export function App({ repository }: AppProps) {
   const [transactionDate, setTransactionDate] = useState(todayDateIso);
   const [transactionNotes, setTransactionNotes] = useState("");
   const [transactionErrors, setTransactionErrors] = useState<TransactionFormErrors>({});
+  const [selectedMemberId, setSelectedMemberId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   const memberListItems = useMemo(
@@ -76,6 +101,34 @@ export function App({ repository }: AppProps) {
       ),
     [members, transactions],
   );
+
+  const selectedMember = useMemo(
+    () => members.find((member) => member.id === selectedMemberId) ?? null,
+    [members, selectedMemberId],
+  );
+
+  const selectedMemberBalanceMinor = useMemo(
+    () => (selectedMember ? calculateMemberBalance(selectedMember.id, transactions) : 0),
+    [selectedMember, transactions],
+  );
+
+  const selectedMemberTransactions = useMemo(() => {
+    if (!selectedMember) {
+      return [];
+    }
+
+    return transactions
+      .filter((transaction) => transaction.memberId === selectedMember.id)
+      .sort((first, second) => {
+        const dateDiff = getTransactionSortTime(second) - getTransactionSortTime(first);
+
+        if (dateDiff !== 0) {
+          return dateDiff;
+        }
+
+        return getCreatedAtSortTime(second) - getCreatedAtSortTime(first);
+      });
+  }, [selectedMember, transactions]);
 
   const prioritizedMembers = useMemo(() => {
     const latestTransactionTimeByMember = new Map<string, number>();
@@ -264,6 +317,219 @@ export function App({ repository }: AppProps) {
     closeTransactionForm();
   }
 
+  function renderTransactionForm() {
+    if (!isTransactionFormOpen) {
+      return null;
+    }
+
+    return (
+      <section className="section-stack" aria-labelledby="add-transaction-title">
+        <Card>
+          <form className="form-stack" aria-labelledby="add-transaction-title" onSubmit={handleAddTransactionSubmit}>
+            <div className="form-heading">
+              <h2 id="add-transaction-title">{ui.transaction.addTitle}</h2>
+            </div>
+
+            <label className="field" htmlFor="transaction-member">
+              <span>{ui.transaction.memberLabel}</span>
+              <select
+                id="transaction-member"
+                value={transactionMemberId}
+                onChange={(event) => {
+                  setTransactionMemberId(event.target.value);
+                  setTransactionErrors((currentErrors) => ({ ...currentErrors, memberId: undefined }));
+                }}
+                aria-invalid={transactionErrors.memberId ? "true" : "false"}
+                aria-describedby={transactionErrors.memberId ? "transaction-member-error" : undefined}
+              >
+                <option value="">{ui.transaction.memberPlaceholder}</option>
+                {prioritizedMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {transactionErrors.memberId && (
+              <p className="field-error" id="transaction-member-error" role="alert">
+                {transactionErrors.memberId}
+              </p>
+            )}
+
+            <TextInput
+              ref={amountInputRef}
+              label={ui.transaction.amountLabel}
+              value={transactionAmount}
+              inputMode="decimal"
+              autoComplete="off"
+              dir="ltr"
+              placeholder={ui.transaction.amountPlaceholder}
+              onChange={(event) => {
+                setTransactionAmount(event.target.value);
+                setTransactionErrors((currentErrors) => ({ ...currentErrors, amount: undefined }));
+              }}
+              aria-invalid={transactionErrors.amount ? "true" : "false"}
+              aria-describedby={transactionErrors.amount ? "transaction-amount-error" : undefined}
+            />
+            {transactionErrors.amount && (
+              <p className="field-error" id="transaction-amount-error" role="alert">
+                {transactionErrors.amount}
+              </p>
+            )}
+
+            <fieldset className="field radio-group">
+              <legend>{ui.transaction.directionLabel}</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="transaction-direction"
+                  value="member_owes_user"
+                  checked={transactionDirection === "member_owes_user"}
+                  onChange={() => setTransactionDirection("member_owes_user")}
+                />
+                <span>{ui.transaction.memberOwesUserLabel}</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="transaction-direction"
+                  value="user_owes_member"
+                  checked={transactionDirection === "user_owes_member"}
+                  onChange={() => setTransactionDirection("user_owes_member")}
+                />
+                <span>{ui.transaction.userOwesMemberLabel}</span>
+              </label>
+            </fieldset>
+
+            <TextInput
+              label={ui.transaction.reasonLabel}
+              value={transactionTitle}
+              placeholder={ui.transaction.reasonPlaceholder}
+              onChange={(event) => {
+                setTransactionTitle(event.target.value);
+                setTransactionErrors((currentErrors) => ({ ...currentErrors, title: undefined }));
+              }}
+              aria-invalid={transactionErrors.title ? "true" : "false"}
+              aria-describedby={transactionErrors.title ? "transaction-title-error" : undefined}
+            />
+            {transactionErrors.title && (
+              <p className="field-error" id="transaction-title-error" role="alert">
+                {transactionErrors.title}
+              </p>
+            )}
+
+            <TextInput
+              label={ui.transaction.dateLabel}
+              type="date"
+              value={transactionDate}
+              onChange={(event) => {
+                setTransactionDate(event.target.value);
+                setTransactionErrors((currentErrors) => ({ ...currentErrors, transactionDate: undefined }));
+              }}
+              aria-invalid={transactionErrors.transactionDate ? "true" : "false"}
+              aria-describedby={transactionErrors.transactionDate ? "transaction-date-error" : undefined}
+            />
+            {transactionErrors.transactionDate && (
+              <p className="field-error" id="transaction-date-error" role="alert">
+                {transactionErrors.transactionDate}
+              </p>
+            )}
+
+            <label className="field" htmlFor="transaction-notes">
+              <span>{ui.transaction.notesLabel}</span>
+              <textarea
+                id="transaction-notes"
+                value={transactionNotes}
+                placeholder={ui.transaction.notesPlaceholder}
+                onChange={(event) => setTransactionNotes(event.target.value)}
+              />
+            </label>
+
+            <div className="button-row">
+              <Button type="submit">{ui.actions.save}</Button>
+              <Button type="button" variant="ghost" onClick={closeTransactionForm}>
+                {ui.actions.cancel}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </section>
+    );
+  }
+
+  if (selectedMember) {
+    return (
+      <AppShell title={ui.app.title} subtitle={ui.app.subtitle}>
+        <section className="section-stack" aria-labelledby="member-detail-title">
+          <Button type="button" variant="ghost" className="back-button" onClick={() => setSelectedMemberId("")}>
+            {ui.actions.back}
+          </Button>
+          <Card className="member-detail-card">
+            <p className="eyebrow">{ui.members.detailTitle}</p>
+            <h2 id="member-detail-title">{selectedMember.name}</h2>
+            <div className="balance-panel">
+              <p className="summary-label">{ui.members.currentBalance}</p>
+              <p>{formatMemberBalance(selectedMember, selectedMemberBalanceMinor)}</p>
+            </div>
+            <div className="button-row detail-actions">
+              <Button type="button" onClick={() => openTransactionForm(selectedMember.id)}>
+                {ui.actions.addTransaction}
+              </Button>
+              <Button type="button" variant="secondary" disabled aria-describedby="reset-debt-placeholder">
+                {ui.members.resetDebt}
+              </Button>
+            </div>
+            <p className="helper-text" id="reset-debt-placeholder">
+              {ui.members.resetPending}
+            </p>
+          </Card>
+        </section>
+
+        {renderTransactionForm()}
+
+        <section className="section-stack" aria-labelledby="transaction-history-title">
+          <div className="section-heading">
+            <h2 id="transaction-history-title">{ui.transaction.historyTitle}</h2>
+          </div>
+          <div className="card-list history-list">
+            {selectedMemberTransactions.length === 0 && <p className="empty-state">{ui.transaction.historyEmpty}</p>}
+            {selectedMemberTransactions.map((transaction) => (
+              <Card key={transaction.id} className="transaction-card">
+                <div className="transaction-card-header">
+                  <div>
+                    <h3>{transaction.title}</h3>
+                    <p>{formatTransactionDirection(selectedMember, transaction)}</p>
+                  </div>
+                  <p className="transaction-amount">{formatIls(transaction.amountMinor)}</p>
+                </div>
+                <dl className="transaction-meta">
+                  <div>
+                    <dt>{ui.transaction.dateLabelShort}</dt>
+                    <dd>{formatDate(transaction.transactionDate) || transaction.transactionDate}</dd>
+                  </div>
+                  <div>
+                    <dt>{ui.transaction.amountLabelShort}</dt>
+                    <dd>{formatIls(transaction.amountMinor)}</dd>
+                  </div>
+                  <div>
+                    <dt>{ui.transaction.reasonLabelShort}</dt>
+                    <dd>{transaction.title}</dd>
+                  </div>
+                  {transaction.notes && (
+                    <div className="transaction-notes">
+                      <dt>{ui.transaction.notesLabelShort}</dt>
+                      <dd>{transaction.notes}</dd>
+                    </div>
+                  )}
+                </dl>
+              </Card>
+            ))}
+          </div>
+        </section>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title={ui.app.title} subtitle={ui.app.subtitle}>
       <section className="hero-section" aria-labelledby="quick-action-title">
@@ -293,139 +559,7 @@ export function App({ repository }: AppProps) {
         </div>
       </section>
 
-      {isTransactionFormOpen && (
-        <section className="section-stack" aria-labelledby="add-transaction-title">
-          <Card>
-            <form className="form-stack" aria-labelledby="add-transaction-title" onSubmit={handleAddTransactionSubmit}>
-              <div className="form-heading">
-                <h2 id="add-transaction-title">{ui.transaction.addTitle}</h2>
-              </div>
-
-              <label className="field" htmlFor="transaction-member">
-                <span>{ui.transaction.memberLabel}</span>
-                <select
-                  id="transaction-member"
-                  value={transactionMemberId}
-                  onChange={(event) => {
-                    setTransactionMemberId(event.target.value);
-                    setTransactionErrors((currentErrors) => ({ ...currentErrors, memberId: undefined }));
-                  }}
-                  aria-invalid={transactionErrors.memberId ? "true" : "false"}
-                  aria-describedby={transactionErrors.memberId ? "transaction-member-error" : undefined}
-                >
-                  <option value="">{ui.transaction.memberPlaceholder}</option>
-                  {prioritizedMembers.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {transactionErrors.memberId && (
-                <p className="field-error" id="transaction-member-error" role="alert">
-                  {transactionErrors.memberId}
-                </p>
-              )}
-
-              <TextInput
-                ref={amountInputRef}
-                label={ui.transaction.amountLabel}
-                value={transactionAmount}
-                inputMode="decimal"
-                autoComplete="off"
-                dir="ltr"
-                placeholder={ui.transaction.amountPlaceholder}
-                onChange={(event) => {
-                  setTransactionAmount(event.target.value);
-                  setTransactionErrors((currentErrors) => ({ ...currentErrors, amount: undefined }));
-                }}
-                aria-invalid={transactionErrors.amount ? "true" : "false"}
-                aria-describedby={transactionErrors.amount ? "transaction-amount-error" : undefined}
-              />
-              {transactionErrors.amount && (
-                <p className="field-error" id="transaction-amount-error" role="alert">
-                  {transactionErrors.amount}
-                </p>
-              )}
-
-              <fieldset className="field radio-group">
-                <legend>{ui.transaction.directionLabel}</legend>
-                <label>
-                  <input
-                    type="radio"
-                    name="transaction-direction"
-                    value="member_owes_user"
-                    checked={transactionDirection === "member_owes_user"}
-                    onChange={() => setTransactionDirection("member_owes_user")}
-                  />
-                  <span>{ui.transaction.memberOwesUserLabel}</span>
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="transaction-direction"
-                    value="user_owes_member"
-                    checked={transactionDirection === "user_owes_member"}
-                    onChange={() => setTransactionDirection("user_owes_member")}
-                  />
-                  <span>{ui.transaction.userOwesMemberLabel}</span>
-                </label>
-              </fieldset>
-
-              <TextInput
-                label={ui.transaction.reasonLabel}
-                value={transactionTitle}
-                placeholder={ui.transaction.reasonPlaceholder}
-                onChange={(event) => {
-                  setTransactionTitle(event.target.value);
-                  setTransactionErrors((currentErrors) => ({ ...currentErrors, title: undefined }));
-                }}
-                aria-invalid={transactionErrors.title ? "true" : "false"}
-                aria-describedby={transactionErrors.title ? "transaction-title-error" : undefined}
-              />
-              {transactionErrors.title && (
-                <p className="field-error" id="transaction-title-error" role="alert">
-                  {transactionErrors.title}
-                </p>
-              )}
-
-              <TextInput
-                label={ui.transaction.dateLabel}
-                type="date"
-                value={transactionDate}
-                onChange={(event) => {
-                  setTransactionDate(event.target.value);
-                  setTransactionErrors((currentErrors) => ({ ...currentErrors, transactionDate: undefined }));
-                }}
-                aria-invalid={transactionErrors.transactionDate ? "true" : "false"}
-                aria-describedby={transactionErrors.transactionDate ? "transaction-date-error" : undefined}
-              />
-              {transactionErrors.transactionDate && (
-                <p className="field-error" id="transaction-date-error" role="alert">
-                  {transactionErrors.transactionDate}
-                </p>
-              )}
-
-              <label className="field" htmlFor="transaction-notes">
-                <span>{ui.transaction.notesLabel}</span>
-                <textarea
-                  id="transaction-notes"
-                  value={transactionNotes}
-                  placeholder={ui.transaction.notesPlaceholder}
-                  onChange={(event) => setTransactionNotes(event.target.value)}
-                />
-              </label>
-
-              <div className="button-row">
-                <Button type="submit">{ui.actions.save}</Button>
-                <Button type="button" variant="ghost" onClick={closeTransactionForm}>
-                  {ui.actions.cancel}
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </section>
-      )}
+      {renderTransactionForm()}
 
       <section className="section-stack" aria-labelledby="members-title">
         <div className="section-heading">
@@ -488,7 +622,10 @@ export function App({ repository }: AppProps) {
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => setMemberActionMessage(`${ui.members.detailsPending}: ${member.name}`)}
+                    onClick={() => {
+                      setSelectedMemberId(member.id);
+                      setMemberActionMessage("");
+                    }}
                   >
                     {ui.actions.viewDetails}
                   </Button>

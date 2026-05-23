@@ -162,6 +162,119 @@ p {
   align-items: flex-start;
 }
 
+.member-detail-card,
+.transaction-card {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.member-detail-card h2 {
+  overflow-wrap: anywhere;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.balance-panel {
+  display: grid;
+  gap: 6px;
+  padding-block: 12px;
+  padding-inline: 12px;
+  border: 1px solid rgba(37, 90, 82, 0.18);
+  border-radius: 8px;
+  background: #f4faf7;
+}
+
+.balance-panel p:last-child {
+  color: #221f1b;
+  font-weight: 800;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.detail-actions .button {
+  flex: 1 1 150px;
+}
+
+.back-button {
+  justify-self: start;
+}
+
+.helper-text,
+.empty-state {
+  color: #625b52;
+  line-height: 1.45;
+}
+
+.history-list {
+  min-width: 0;
+}
+
+.transaction-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.transaction-card-header div {
+  min-width: 0;
+}
+
+.transaction-card h3 {
+  font-size: 1.05rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.transaction-card-header p:not(.transaction-amount) {
+  margin-block-start: 4px;
+  color: #625b52;
+  line-height: 1.45;
+}
+
+.transaction-amount {
+  flex: 0 0 auto;
+  color: #255a52;
+  direction: ltr;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: end;
+}
+
+.transaction-meta {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.transaction-meta div {
+  display: grid;
+  grid-template-columns: minmax(64px, max-content) minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.transaction-meta dt {
+  color: #625b52;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.transaction-meta dd {
+  min-width: 0;
+  margin: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.transaction-notes {
+  padding-block-start: 8px;
+  border-block-start: 1px solid rgba(34, 31, 27, 0.1);
+}
+
 .form-heading {
   display: grid;
   gap: 6px;
@@ -239,6 +352,11 @@ p {
   min-height: 40px;
   color: #255a52;
   background: transparent;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .field-error {
@@ -339,6 +457,10 @@ p {
   }
 
   .member-row {
+    display: grid;
+  }
+
+  .transaction-card-header {
     display: grid;
   }
 

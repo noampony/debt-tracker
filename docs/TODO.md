@@ -703,7 +703,7 @@ Definition of Done:
 
 ## 7.1 Member Detail Screen
 
-* [ ] Implement member detail screen.
+* [x] Implement member detail screen.
 
 Description:
 Show details for a single member.
@@ -726,7 +726,7 @@ Definition of Done:
 
 * User can return to the main screen.
 
-* [ ] Preselect member when adding transaction from detail screen.
+* [x] Preselect member when adding transaction from detail screen.
 
 Description:
 Improve speed when adding a transaction from a specific member page.
@@ -740,7 +740,7 @@ Definition of Done:
 
 ## 7.2 Transaction History
 
-* [ ] Implement transaction history list for a member.
+* [x] Implement transaction history list for a member.
 
 Description:
 Show all transactions for the selected member.
@@ -765,7 +765,7 @@ Definition of Done:
 
 * Empty history state is shown in Hebrew.
 
-* [ ] Make transaction history mobile-friendly.
+* [x] Make transaction history mobile-friendly.
 
 Description:
 Use cards or compact list items instead of dense tables.
