@@ -263,7 +263,7 @@ Recommended display:
 
 Suggested Hebrew labels:
 
-* `היסטוריית עסקאות`
+* `היסטוריית תנועות`
 * `תאריך`
 * `סכום`
 * `סיבה`
@@ -366,7 +366,7 @@ Minimum implementation:
 Suggested Hebrew dialog:
 
 * Title: `איפוס חוב`
-* Body: `הפעולה תאפס את החוב מול {memberName} ותוסיף עסקת איזון להיסטוריה. האם להמשיך?`
+* Body: `הפעולה תאפס את החוב מול {memberName} ותוסיף תנועת איזון להיסטוריה. האם להמשיך?`
 * Confirm button: `אישור איפוס`
 * Cancel button: `ביטול`
 
@@ -575,13 +575,13 @@ Required elements:
 Suggested Hebrew UI:
 
 * App title: `חובות בין חברים`
-* Primary action: `עסקה חדשה`
+* Primary action: `תנועה חדשה`
 * Add member: `הוספת איש קשר`
 * Empty state: `עוד אין אנשי קשר. הוסף איש קשר כדי להתחיל.`
 
 Member card actions:
 
-* `הוסף עסקה`
+* `הוסף תנועה`
 * `צפייה בפרטים`
 
 ## 7.2 Add Transaction Screen / Modal
@@ -601,10 +601,10 @@ Required fields:
 
 Suggested Hebrew UI:
 
-* Title: `עסקה חדשה`
+* Title: `תנועה חדשה`
 * Member: `איש קשר`
 * Amount: `סכום`
-* Direction: `סוג העסקה`
+* Direction: `סוג התנועה`
 * Reason: `סיבה`
 * Date: `תאריך`
 * Notes: `הערות`
@@ -634,8 +634,8 @@ Required elements:
 Suggested Hebrew UI:
 
 * `מצב חוב נוכחי`
-* `היסטוריית עסקאות`
-* `עסקה חדשה`
+* `היסטוריית תנועות`
+* `תנועה חדשה`
 * `איפוס חוב`
 
 ## 7.4 Add Member Screen / Modal
@@ -670,7 +670,7 @@ Required behavior:
 Suggested Hebrew UI:
 
 * Title: `איפוס חוב`
-* Body: `הפעולה תאפס את החוב מול {memberName} ותוסיף עסקת איזון להיסטוריה. האם להמשיך?`
+* Body: `הפעולה תאפס את החוב מול {memberName} ותוסיף תנועת איזון להיסטוריה. האם להמשיך?`
 * Confirm: `אישור איפוס`
 * Cancel: `ביטול`
 
@@ -981,7 +981,7 @@ Avoid overly formal accounting language unless needed.
 
 Prefer:
 
-* `עסקה חדשה`
+* `תנועה חדשה`
 * `שמירה`
 * `איפוס חוב`
 * `חייבים לך`
@@ -1014,7 +1014,7 @@ For Phase 1, acceptable practical labels:
 ```ts
 export const he = {
   appTitle: "חובות בין חברים",
-  newTransaction: "עסקה חדשה",
+  newTransaction: "תנועה חדשה",
   addMember: "הוספת איש קשר",
   save: "שמירה",
   cancel: "ביטול",
