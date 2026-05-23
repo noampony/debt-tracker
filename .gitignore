@@ -6,3 +6,15 @@ coverage
 *.local
 *.tsbuildinfo
 node_modules/.tmp
+
+# Environment files — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# SQLite database files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
