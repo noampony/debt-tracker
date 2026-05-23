@@ -1,0 +1,320 @@
+:root {
+  color: #221f1b;
+  background: #f7f2ea;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  direction: rtl;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.app-viewport {
+  min-height: 100vh;
+  background: linear-gradient(180deg, rgba(55, 107, 99, 0.12), transparent 260px), #f7f2ea;
+  padding-block: 0 32px;
+  padding-inline: 0;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  margin-inline: auto;
+  background: #fffaf3;
+  box-shadow: 0 16px 60px rgba(42, 35, 27, 0.16);
+}
+
+.app-header {
+  display: grid;
+  gap: 8px;
+  padding-block: 28px 20px;
+  padding-inline: 20px;
+  color: #fffaf3;
+  background: #255a52;
+}
+
+.app-header h1 {
+  font-size: 2rem;
+  line-height: 1.15;
+}
+
+.app-header p {
+  color: rgba(255, 250, 243, 0.84);
+  line-height: 1.5;
+}
+
+.app-main {
+  display: grid;
+  gap: 20px;
+  padding-block: 20px 96px;
+  padding-inline: 16px;
+}
+
+.hero-section {
+  display: grid;
+  gap: 18px;
+  padding-block: 20px;
+  padding-inline: 18px;
+  border: 1px solid rgba(37, 90, 82, 0.22);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.hero-section h2,
+.section-stack h2 {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.hero-section p {
+  margin-block-start: 8px;
+  color: #5f574d;
+  line-height: 1.55;
+}
+
+.eyebrow {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #8a4d22;
+}
+
+.section-stack,
+.card-list,
+.form-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.section-heading,
+.member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.member-row {
+  align-items: flex-start;
+}
+
+.form-heading {
+  display: grid;
+  gap: 6px;
+}
+
+.form-heading h3 {
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.form-heading p {
+  color: #625b52;
+  line-height: 1.45;
+}
+
+.button-row,
+.member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.member-actions {
+  justify-content: flex-end;
+}
+
+.member-row h3 {
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.member-row p {
+  margin-block-start: 4px;
+  color: #625b52;
+  line-height: 1.45;
+}
+
+.card {
+  padding-block: 16px;
+  padding-inline: 16px;
+  border: 1px solid rgba(34, 31, 27, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(64, 52, 39, 0.08);
+}
+
+.button {
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding-block: 12px;
+  padding-inline: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.prominent-action {
+  width: 100%;
+  min-height: 56px;
+  font-size: 1.05rem;
+}
+
+.button-primary {
+  color: #ffffff;
+  background: #255a52;
+}
+
+.button-secondary {
+  color: #255a52;
+  border-color: rgba(37, 90, 82, 0.3);
+  background: #edf6f3;
+}
+
+.button-ghost {
+  min-height: 40px;
+  color: #255a52;
+  background: transparent;
+}
+
+.field-error {
+  color: #9f2626;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.inline-status {
+  padding-block: 10px;
+  padding-inline: 12px;
+  border: 1px solid rgba(37, 90, 82, 0.22);
+  border-radius: 8px;
+  color: #255a52;
+  background: #edf6f3;
+  line-height: 1.45;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(34, 31, 27, 0.18);
+  border-radius: 8px;
+  padding-block: 12px;
+  padding-inline: 14px;
+  color: #221f1b;
+  background: #fffdf9;
+}
+
+.field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.field input[dir="ltr"] {
+  text-align: start;
+}
+
+.radio-group {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.radio-group legend {
+  padding: 0;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  border: 1px solid rgba(34, 31, 27, 0.12);
+  border-radius: 8px;
+  padding-block: 10px;
+  padding-inline: 12px;
+  background: #fffdf9;
+}
+
+.radio-group input {
+  width: 20px;
+  min-height: 20px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.button:focus-visible {
+  outline: 3px solid rgba(199, 124, 57, 0.35);
+  outline-offset: 2px;
+}
+
+@media (min-width: 520px) {
+  .app-viewport {
+    padding-block-start: 24px;
+    padding-inline: 16px;
+  }
+
+  .app-shell {
+    min-height: calc(100vh - 48px);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 420px) {
+  .member-row {
+    display: grid;
+  }
+
+  .member-actions {
+    justify-content: stretch;
+  }
+
+  .member-actions .button {
+    flex: 1 1 128px;
+  }
+}
