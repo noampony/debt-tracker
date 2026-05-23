@@ -782,7 +782,7 @@ Definition of Done:
 
 ## 8.1 Reset Action
 
-* [ ] Add reset debt button on member detail screen.
+* [x] Add reset debt button on member detail screen.
 
 Description:
 Allow the user to reset the debt with a member.
@@ -799,7 +799,7 @@ Definition of Done:
 
 * Button does not immediately reset debt without confirmation.
 
-* [ ] Implement reset confirmation dialog.
+* [x] Implement reset confirmation dialog.
 
 Description:
 Require explicit second approval before resetting debt.
@@ -823,7 +823,7 @@ Definition of Done:
 
 * Dialog is usable on mobile.
 
-* [ ] Create reset adjustment transaction on confirmation.
+* [x] Create reset adjustment transaction on confirmation.
 
 Description:
 Reset must preserve history by adding a balancing transaction.

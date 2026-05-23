@@ -36,7 +36,12 @@ export const ui = {
     detailTitle: "פרטי איש קשר",
     currentBalance: "יתרה נוכחית",
     resetDebt: "איפוס חוב",
-    resetPending: "איפוס חוב יתווסף בשלב הבא",
+    resetHelp: "האיפוס יוסיף עסקת איזון להיסטוריה.",
+    resetDisabled: "אין חוב פתוח לאיפוס.",
+    resetDialogTitle: "איפוס חוב",
+    resetDialogBody: "הפעולה תאפס את החוב מול {memberName} ותוסיף עסקת איזון להיסטוריה. האם להמשיך?",
+    resetDialogConfirm: "אישור איפוס",
+    resetDialogCancel: "ביטול",
   },
   transaction: {
     addTitle: "עסקה חדשה",
