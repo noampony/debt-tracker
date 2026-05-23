@@ -206,10 +206,10 @@ Requirements:
   - Date
   - Optional notes
 - Required Hebrew labels include:
-  - `עסקה חדשה`
+  - `תנועה חדשה`
   - `איש קשר`
   - `סכום`
-  - `סוג העסקה`
+  - `סוג התנועה`
   - `סיבה`
   - `תאריך`
   - `הערות`
@@ -337,7 +337,7 @@ Requirements:
 - Implement a confirmation dialog.
 - Required Hebrew dialog text:
   - Title: `איפוס חוב`
-  - Body: `הפעולה תאפס את החוב מול {memberName} ותוסיף עסקת איזון להיסטוריה. האם להמשיך?`
+  - Body: `הפעולה תאפס את החוב מול {memberName} ותוסיף תנועת איזון להיסטוריה. האם להמשיך?`
   - Confirm: `אישור איפוס`
   - Cancel: `ביטול`
 - Cancel must close the dialog without changing anything.

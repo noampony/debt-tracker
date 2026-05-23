@@ -39,11 +39,11 @@ test.describe("Reset flow", () => {
     await page.getByRole("form", { name: "הוספת איש קשר" }).getByRole("button", { name: "שמירה" }).click();
     await expect(page.getByRole("heading", { level: 3, name: "דני" })).toBeVisible();
     await page.getByRole("button", { name: "פרטים" }).click();
-    await page.getByRole("button", { name: "עסקה חדשה" }).click();
+    await page.getByRole("button", { name: "תנועה חדשה" }).click();
     await page.getByLabel("סכום").fill("75");
     await page.getByLabel("הוא חייב לי").check();
     await page.getByLabel("סיבה").fill("ארוחה");
-    await page.getByRole("form", { name: "עסקה חדשה" }).getByRole("button", { name: "שמירה" }).click();
+    await page.getByRole("form", { name: "תנועה חדשה" }).getByRole("button", { name: "שמירה" }).click();
 
     // Click the reset button – confirmation dialog must open
     const resetButton = page.getByRole("button", { name: "איפוס חוב" });
@@ -76,11 +76,11 @@ test.describe("Reset flow", () => {
     await page.getByRole("form", { name: "הוספת איש קשר" }).getByRole("button", { name: "שמירה" }).click();
     await expect(page.getByRole("heading", { level: 3, name: "דני" })).toBeVisible();
     await page.getByRole("button", { name: "פרטים" }).click();
-    await page.getByRole("button", { name: "עסקה חדשה" }).click();
+    await page.getByRole("button", { name: "תנועה חדשה" }).click();
     await page.getByLabel("סכום").fill("75");
     await page.getByLabel("הוא חייב לי").check();
     await page.getByLabel("סיבה").fill("ארוחה");
-    await page.getByRole("form", { name: "עסקה חדשה" }).getByRole("button", { name: "שמירה" }).click();
+    await page.getByRole("form", { name: "תנועה חדשה" }).getByRole("button", { name: "שמירה" }).click();
 
     // Confirm dialog is present with non-zero balance
     await expect(page.getByText(/דני חייב לך/).first()).toBeVisible();

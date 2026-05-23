@@ -22,7 +22,7 @@ test.describe("Core happy path", () => {
     // ─── Step 1: App loads with Hebrew title ─────────────────────────────────
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     // Hebrew app title
-    await expect(page.getByText("מעקב חובות")).toBeVisible();
+    await expect(page.getByText("החזרתי?")).toBeVisible();
 
     // ─── Step 2: Add a member ─────────────────────────────────────────────────
     await page.getByRole("button", { name: "הוספת איש קשר" }).click();
@@ -38,10 +38,10 @@ test.describe("Core happy path", () => {
 
     // ─── Step 3: Add a transaction for that member ────────────────────────────
     // Use the "new transaction" button on the member card to pre-select the member
-    await page.getByRole("heading", { level: 3, name: "דני" }).locator("..").locator("..").getByRole("button", { name: "עסקה חדשה" }).click();
+    await page.getByRole("heading", { level: 3, name: "דני" }).locator("..").locator("..").getByRole("button", { name: "תנועה חדשה" }).click();
 
     // Transaction form opens with Hebrew labels and member pre-selected
-    const txForm = page.getByRole("form", { name: "עסקה חדשה" });
+    const txForm = page.getByRole("form", { name: "תנועה חדשה" });
     await expect(txForm).toBeVisible();
     await expect(page.getByLabel("סכום")).toBeVisible();
 
@@ -70,7 +70,7 @@ test.describe("Core happy path", () => {
     await expect(page.getByText("יתרה נוכחית")).toBeVisible();
 
     // ─── Step 6: Verify transaction appears in history ────────────────────────
-    await expect(page.getByText("היסטוריית עסקאות")).toBeVisible();
+    await expect(page.getByText("היסטוריית תנועות")).toBeVisible();
     await expect(page.getByRole("heading", { level: 3, name: "ארוחת צהריים" })).toBeVisible();
     // Direction is shown in Hebrew (first match covers both balance panel and transaction card)
     await expect(page.getByText(/דני חייב לך/).first()).toBeVisible();
@@ -90,9 +90,9 @@ test.describe("Core happy path", () => {
     await page.getByRole("button", { name: "פרטים" }).click();
 
     // Add transaction from detail screen
-    await page.getByRole("button", { name: "עסקה חדשה" }).click();
+    await page.getByRole("button", { name: "תנועה חדשה" }).click();
 
-    const txForm = page.getByRole("form", { name: "עסקה חדשה" });
+    const txForm = page.getByRole("form", { name: "תנועה חדשה" });
     await expect(txForm).toBeVisible();
 
     await page.getByLabel("סכום").fill("50");

@@ -550,10 +550,10 @@ Required fields:
 
 Required Hebrew labels:
 
-* Title: `עסקה חדשה`
+* Title: `תנועה חדשה`
 * Member: `איש קשר`
 * Amount: `סכום`
-* Direction: `סוג העסקה`
+* Direction: `סוג התנועה`
 * Reason: `סיבה`
 * Date: `תאריך`
 * Notes: `הערות`
@@ -621,7 +621,7 @@ The primary app action must be easy to access immediately.
 
 Required Hebrew label:
 
-* `עסקה חדשה`
+* `תנועה חדשה`
 
 Definition of Done:
 
@@ -807,7 +807,7 @@ Require explicit second approval before resetting debt.
 Required Hebrew UI:
 
 * Title: `איפוס חוב`
-* Body: `הפעולה תאפס את החוב מול {memberName} ותוסיף עסקת איזון להיסטוריה. האם להמשיך?`
+* Body: `הפעולה תאפס את החוב מול {memberName} ותוסיף תנועת איזון להיסטוריה. האם להמשיך?`
 * Confirm: `אישור איפוס`
 * Cancel: `ביטול`
 
@@ -1384,7 +1384,7 @@ Definition of Done:
 
 * Test runs against production-like build where practical.
 
-Implemented in `e2e/happy-path.spec.ts` (2 tests). Tests assert Hebrew titles (`מעקב חובות`, `הוספת איש קשר`, `עסקה חדשה`, `היסטוריית עסקאות`), Hebrew balance text (`דני חייב לך`), and transaction appearing in history. All pass via `npm run test:e2e`.
+Implemented in `e2e/happy-path.spec.ts` (2 tests). Tests assert Hebrew titles (`החזרתי?`, `הוספת איש קשר`, `תנועה חדשה`, `היסטוריית תנועות`), Hebrew balance text (`דני חייב לך`), and transaction appearing in history. All pass via `npm run test:e2e`.
 
 * [x] Add E2E test for reset flow.
 
