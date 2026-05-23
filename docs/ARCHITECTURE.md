@@ -4,13 +4,15 @@
 
 ### Overview
 
-The app uses a **separate Node.js/Express backend** in the `server/` directory.
+The app uses a **separate Express backend module** in the `server/` directory.
 The frontend (React + Vite) communicates with the backend over HTTP REST API.
+For local development, `server/index.ts` starts a long-running Express server.
+For Vercel production, `api/index.ts` exports the same Express app as a Vercel Function.
 
 ### Why a Separate Backend?
 
 - The frontend uses **Vite** (not Next.js), so server actions or file-based routing are not available.
-- A dedicated backend provides a clean separation of concerns and can be deployed independently.
+- A dedicated backend provides a clean separation of concerns and can run as a local Node server or a Vercel Function.
 - The `DebtRepository` interface in `src/storage/debtRepository.ts` allows the frontend to swap between local storage and API-backed storage without UI changes.
 
 ### Stack
@@ -20,21 +22,34 @@ The frontend (React + Vite) communicates with the backend over HTTP REST API.
 | Frontend     | React 19 + TypeScript + Vite  |
 | Backend      | Express v5 + TypeScript       |
 | ORM          | Prisma v5                     |
-| Database     | SQLite (dev) / PostgreSQL (prod) |
+| Database     | PostgreSQL                            |
 | Auth         | JWT (jsonwebtoken) + bcrypt   |
 | Validation   | Zod                           |
 | Test Runner  | Vitest + Supertest            |
-| Runtime      | Node.js via `tsx`             |
+| Runtime      | Local Node.js via `tsx` / Vercel Functions |
 
 ### Data Flow
 
 ```
 Browser (React app)
   ↕ HTTPS / fetch
-Express API (server/)
+Express API (server/ locally, api/index.ts on Vercel)
   ↕ Prisma Client
-SQLite / PostgreSQL
+PostgreSQL
 ```
+
+---
+
+## Vercel Deployment
+
+Production hosting is Vercel:
+
+- The React/Vite frontend is built with `npm run build` and served from `dist`.
+- `vercel.json` declares the Vite framework preset, build command, output directory, and rewrites.
+- `/api/*` and `/health` are routed to `api/index.ts`.
+- `api/index.ts` exports `createApp()` without calling `listen()`, which lets Vercel run the Express app as a serverless function.
+- `server/index.ts` remains the local/traditional Node entrypoint and is not used by Vercel Functions.
+- No secrets are stored in `vercel.json`; production values are configured in Vercel environment variables.
 
 ---
 
@@ -183,9 +198,11 @@ If implemented in a future version:
 
 | Variable         | Required | Description                                      |
 |------------------|----------|--------------------------------------------------|
-| `DATABASE_URL`   | Yes      | Prisma database URL (`file:./dev.db` or postgres) |
+| `DATABASE_URL`   | Yes      | PostgreSQL URL for local app runtime and Vercel production |
 | `JWT_SECRET`     | Yes      | Random secret for signing JWT tokens             |
-| `PORT`           | No       | Server port (default: `3001`)                    |
+| `PORT`           | No       | Local server port (default: `3001`; not used by Vercel Functions) |
+| `TEST_DATABASE_URL` | Yes for server tests | Dedicated PostgreSQL test database; tests delete rows |
+| `E2E_DATABASE_URL` | No | Dedicated PostgreSQL E2E database; falls back to `TEST_DATABASE_URL` |
 
 **Do not commit real values.** See `.env.example` for the template.
 
@@ -194,11 +211,11 @@ If implemented in a future version:
 ## Migration
 
 ```bash
-# Apply migrations
-DATABASE_URL="file:./dev.db" npx prisma migrate deploy
+# Apply migrations to local development database
+npm run db:migrate
 
-# Apply to test database
-DATABASE_URL="file:./test.db" npx prisma migrate deploy
+# Apply migrations to a dedicated test database
+TEST_DATABASE_URL="postgresql://..." npm run test:server
 ```
 
 ---
@@ -221,15 +238,14 @@ npm run start:server
 npm run test:server
 ```
 
-Tests use an isolated `test.db` SQLite file. The test database is migrated automatically before tests run.
+Tests require a dedicated PostgreSQL database through `TEST_DATABASE_URL`. The test setup applies migrations automatically and test helpers delete rows, so this URL must never point at production.
 
 ---
 
 ## Production Deployment Notes
 
-For production:
-- Set `DATABASE_URL` to a PostgreSQL connection string.
+For Vercel production:
+- Set `DATABASE_URL` to a hosted PostgreSQL connection string.
 - Set `JWT_SECRET` to a cryptographically random 32+ byte hex string.
-- Run `npm run db:migrate` after deployment to apply migrations.
-- Update `prisma/schema.prisma` datasource provider from `sqlite` to `postgresql` when switching databases.
-
+- Run `npm run db:migrate` against the production database after `DATABASE_URL` is configured.
+- Verify `/health`, authentication, member creation, transaction creation, and reset adjustment behavior after deployment.
