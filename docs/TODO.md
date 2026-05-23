@@ -1159,7 +1159,7 @@ All interactive elements (buttons, inputs, selects, textareas, radio buttons) ar
 
 # 13. Security and Privacy
 
-* [ ] Validate all user input on the client.
+* [x] Validate all user input on the client.
 
 Description:
 Catch common invalid input early and provide Hebrew feedback.
@@ -1174,7 +1174,9 @@ Definition of Done:
 
 * Date validation exists.
 
-* [ ] Validate all user input on the backend.
+`App.tsx` validates all fields before saving: member name (empty/whitespace/duplicate), transaction amount (required/zero/negative/invalid number), transaction title (required), and transaction date (required). All validation errors use Hebrew strings from `src/i18n/he.ts`. Tests cover all invalid-input paths in `src/tests/App.test.tsx`.
+
+* [x] Validate all user input on the backend.
 
 Description:
 Client validation is not sufficient. Backend must enforce data rules.
@@ -1191,7 +1193,9 @@ Definition of Done:
 
 * Backend tests cover invalid inputs.
 
-* [ ] Prevent unsafe rendering of user-generated content.
+Implemented in `server/lib/validation.ts` via Zod schemas: `createMemberSchema` (name min 1, max 200, trimmed; whitespace-only rejected explicitly in route), `createTransactionSchema` (amountMinor int positive, direction enum, title min 1 max 500, date YYYY-MM-DD regex, notes max 2000). Every transaction creation/update verifies the target member belongs to `req.userId`; foreign members return 404. Backend tests in `server/tests/members.test.ts`, `server/tests/transactions.test.ts`, `server/tests/auth.test.ts` cover all invalid-input and cross-user access cases (44 tests, all passing).
+
+* [x] Prevent unsafe rendering of user-generated content.
 
 Description:
 Member names, titles, and notes are user-generated and must be rendered safely.
@@ -1204,7 +1208,9 @@ Definition of Done:
 
 * Security test or manual test verifies HTML-like input is not executed.
 
-* [ ] Remove sensitive logging.
+React renders all user-generated content (`{member.name}`, `{transaction.title}`, `{transaction.notes}`, etc.) via JSX text interpolation, which escapes HTML entities automatically. No `dangerouslySetInnerHTML` or `innerHTML` assignments exist anywhere in the frontend (`grep` confirmed). Three automated security tests added to `src/tests/App.test.tsx` (describe "Security — safe rendering") verify that HTML-like strings in member names, transaction titles, and notes render as escaped text nodes — no child elements are injected. Two backend tests in `server/tests/transactions.test.ts` confirm HTML-like strings are stored and returned as plain JSON strings. Front-end 82/82 and backend 46/46 tests pass.
+
+* [x] Remove sensitive logging.
 
 Description:
 The app must not log personal financial data unnecessarily.
@@ -1217,7 +1223,9 @@ Definition of Done:
 
 * Errors shown to users do not reveal stack traces or sensitive internals.
 
-* [ ] Protect secrets and environment variables.
+Audited all `console.log`/`console.error` calls: the only occurrences are `console.log('[server] running on port ${PORT}')` (server startup, no personal data) and `console.error('[server error]', err.message)` in the generic error handler (logs only the internal JS error message, never user-supplied content). The frontend shows opaque Hebrew error strings from `ui.error.*` — no stack traces or server internals are exposed to users. No other `console.*` calls found in frontend source.
+
+* [x] Protect secrets and environment variables.
 
 Description:
 Ensure deployment secrets are not exposed to the frontend or committed to source control.
@@ -1228,6 +1236,8 @@ Definition of Done:
 * `.env` files with secrets are ignored by git.
 * Public frontend environment variables contain no secrets.
 * Deployment docs list required environment variables without exposing values.
+
+`JWT_SECRET` and `DATABASE_URL` are read exclusively from `process.env` in `server/lib/auth.ts` and Prisma config. `.env` is listed in `.gitignore` (confirmed). `.env.example` ships as a template with placeholder values only. The Vite frontend uses no `VITE_*` environment variables containing secrets — the only API communication is via bearer tokens issued at runtime. Required variables documented in `docs/ARCHITECTURE.md` (Environment Variables table) and `.env.example`.
 
 ---
 
