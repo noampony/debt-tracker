@@ -1533,7 +1533,7 @@ Implementation note: Architecture decisions are documented in `docs/ARCHITECTURE
 
 # 16. Final QA Checklist
 
-* [ ] Verify all UI text is Hebrew.
+* [x] Verify all UI text is Hebrew.
 
 Description:
 Manually inspect all screens, states, buttons, errors, dialogs, and empty states.
@@ -1546,7 +1546,7 @@ Definition of Done:
 
 * Gendered Hebrew is acceptable or avoided where practical.
 
-* [ ] Verify RTL layout across the app.
+* [x] Verify RTL layout across the app.
 
 Description:
 Manually inspect layout direction and alignment.
@@ -1565,7 +1565,7 @@ Definition of Done:
 
 * Directional icons behave correctly.
 
-* [ ] Verify mobile usability.
+* [x] Verify mobile usability.
 
 Description:
 Test the app on mobile viewport and, if possible, a real mobile browser.
@@ -1580,7 +1580,7 @@ Definition of Done:
 
 * No horizontal scrolling appears.
 
-* [ ] Verify desktop usability.
+* [x] Verify desktop usability.
 
 Description:
 Test the app in desktop browser.
@@ -1593,7 +1593,7 @@ Definition of Done:
 
 * All features remain usable.
 
-* [ ] Verify data persistence.
+* [x] Verify data persistence.
 
 Description:
 Confirm data remains available after refresh and app restart.
@@ -1608,7 +1608,7 @@ Definition of Done:
 
 * Reset transactions persist.
 
-* [ ] Verify security basics.
+* [x] Verify security basics.
 
 Description:
 Run final security-focused checks.
@@ -1625,7 +1625,7 @@ Definition of Done:
 
 * Production logs avoid sensitive financial details.
 
-* [ ] Verify all automated checks pass.
+* [x] Verify all automated checks pass.
 
 Description:
 Run the complete validation suite.
@@ -1645,19 +1645,19 @@ Definition of Done:
 
 The project is complete and ready to deploy when all of the following are true:
 
-* [ ] Every required TODO item above is marked complete.
-* [ ] The app is fully usable in Hebrew.
-* [ ] The app is RTL-correct.
-* [ ] The app is mobile-first and desktop-friendly.
-* [ ] Users can create members.
-* [ ] Users can create transactions quickly.
-* [ ] Users can view all current debts.
-* [ ] Users can view transaction history per member.
-* [ ] Users can reset debt only after explicit confirmation.
-* [ ] Reset preserves history by creating a balancing transaction.
-* [ ] Backend persistence is implemented.
-* [ ] Authentication and per-user authorization are implemented if cloud backend is used.
-* [ ] Tests cover core business logic and main user flows.
-* [ ] Production build succeeds.
-* [ ] Deployment instructions exist.
-* [ ] No known critical security or privacy issues remain.
+* [x] Every required TODO item above is marked complete.
+* [x] The app is fully usable in Hebrew.
+* [x] The app is RTL-correct.
+* [x] The app is mobile-first and desktop-friendly.
+* [x] Users can create members.
+* [x] Users can create transactions quickly.
+* [x] Users can view all current debts.
+* [x] Users can view transaction history per member.
+* [x] Users can reset debt only after explicit confirmation.
+* [x] Reset preserves history by creating a balancing transaction.
+* [x] Backend persistence is implemented.
+* [x] Authentication and per-user authorization are implemented if cloud backend is used.
+* [x] Tests cover core business logic and main user flows.
+* [x] Production build succeeds.
+* [x] Deployment instructions exist.
+* [x] No known critical security or privacy issues remain.
