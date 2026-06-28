@@ -103,6 +103,12 @@ export const ui = {
     errorEmailTaken: "כתובת המייל כבר רשומה במערכת",
     errorGeneric: "אירעה שגיאה. נסה/י שנית.",
   },
+  theme: {
+    switchToDark: "מעבר למצב כהה",
+    switchToLight: "מעבר למצב בהיר",
+    hint: "כאן עוברים בין מצב כהה לבהיר",
+    hintDismiss: "סגירה",
+  },
   loading: {
     main: "טוען נתונים...",
     savingMember: "שומר...",

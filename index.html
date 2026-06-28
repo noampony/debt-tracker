@@ -3,9 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f7f2ea" />
+    <meta name="theme-color" content="#1d4ed8" />
     <link rel="icon" type="image/png" href="/debt-tracker-logo.png" />
     <link rel="apple-touch-icon" href="/debt-tracker-logo.png" />
+
+    <!-- Resolve the color theme before paint to avoid a flash of the wrong theme -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          // Default to dark when the user has not made an explicit choice.
+          var theme = stored === "light" || stored === "dark" ? stored : "dark";
+          document.documentElement.setAttribute("data-theme", theme);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", theme === "dark" ? "#15315e" : "#1d4ed8");
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap"
+    />
+
     <title>החזרתי?</title>
 
     <!-- Open Graph / WhatsApp link preview -->

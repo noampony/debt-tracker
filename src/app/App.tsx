@@ -71,6 +71,17 @@ function getCreatedAtSortTime(transaction: Transaction): number {
   return Number.isFinite(createdAtTime) ? createdAtTime : 0;
 }
 
+function getMemberInitial(name: string): string {
+  const trimmed = name.trim();
+  return trimmed ? trimmed[0] : "?";
+}
+
+function balanceToneClass(balanceMinor: number): string {
+  if (balanceMinor > 0) return "balance-positive";
+  if (balanceMinor < 0) return "balance-negative";
+  return "balance-zero";
+}
+
 export function App({ repository, userEmail, onLogout }: AppProps) {
   const todayDateIso = getTodayDateIso();
   const amountInputRef = useRef<HTMLInputElement>(null);
@@ -1138,7 +1149,9 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                 </div>
                 <div className="balance-panel">
                   <p className="summary-label">{ui.members.currentBalance}</p>
-                  <p>{formatMemberBalance(selectedMember, selectedMemberBalanceMinor)}</p>
+                  <p className={balanceToneClass(selectedMemberBalanceMinor)}>
+                    {formatMemberBalance(selectedMember, selectedMemberBalanceMinor)}
+                  </p>
                 </div>
                 <div className="button-row detail-actions">
                   <Button type="button" onClick={() => openTransactionForm(selectedMember.id)}>
@@ -1244,12 +1257,28 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
           <h2 id="summary-title">{ui.overview.title}</h2>
         </div>
         <div className="summary-grid">
-          <Card className="summary-card">
-            <p className="summary-label">{ui.overview.totalOwedToUser}</p>
+          <Card className="summary-card summary-card--positive">
+            <div className="summary-card-head">
+              <span className="summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="17" y1="7" x2="7" y2="17" />
+                  <polyline points="17 17 7 17 7 7" />
+                </svg>
+              </span>
+              <p className="summary-label">{ui.overview.totalOwedToUser}</p>
+            </div>
             <p className="summary-amount">{formatIls(balanceSummary.totalOwedToUserMinor)}</p>
           </Card>
-          <Card className="summary-card">
-            <p className="summary-label">{ui.overview.totalUserOwes}</p>
+          <Card className="summary-card summary-card--negative">
+            <div className="summary-card-head">
+              <span className="summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="7" y1="17" x2="17" y2="7" />
+                  <polyline points="7 7 17 7 17 17" />
+                </svg>
+              </span>
+              <p className="summary-label">{ui.overview.totalUserOwes}</p>
+            </div>
             <p className="summary-amount">{formatIls(balanceSummary.totalUserOwesMinor)}</p>
           </Card>
         </div>
@@ -1317,11 +1346,16 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
           )}
           {!isLoading && !loadError && memberListItems.length === 0 && <p>{ui.members.empty}</p>}
           {memberListItems.map((member) => (
-            <Card key={member.id}>
+            <Card key={member.id} className="member-card">
               <div className="member-row">
-                <div>
-                  <h3>{member.name}</h3>
-                  <p>{formatMemberBalance(member, member.balanceMinor)}</p>
+                <div className="member-identity">
+                  <span className="member-avatar" aria-hidden="true">{getMemberInitial(member.name)}</span>
+                  <div className="member-identity-text">
+                    <h3>{member.name}</h3>
+                    <p className={balanceToneClass(member.balanceMinor)}>
+                      {formatMemberBalance(member, member.balanceMinor)}
+                    </p>
+                  </div>
                 </div>
                 <div className="member-actions">
                   <Button type="button" onClick={() => openTransactionForm(member.id)}>
