@@ -10,7 +10,7 @@ const THEME_COLOR: Record<Theme, string> = {
   dark: "#15315e",
 };
 
-/** The theme the user explicitly chose, or null if they are following the system. */
+/** The theme the user explicitly chose, or null if they have not chosen one. */
 export function getStoredTheme(): Theme | null {
   try {
     const value = localStorage.getItem(STORAGE_KEY);
@@ -20,15 +20,9 @@ export function getStoredTheme(): Theme | null {
   }
 }
 
-export function getSystemTheme(): Theme {
-  return typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
+/** Default theme when the user has not made an explicit choice. */
 export function resolveTheme(): Theme {
-  return getStoredTheme() ?? getSystemTheme();
+  return getStoredTheme() ?? "dark";
 }
 
 /**
@@ -63,19 +57,6 @@ export function useTheme(): { theme: Theme; toggle: () => void } {
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
-
-  useEffect(() => {
-    const query = window.matchMedia?.("(prefers-color-scheme: dark)");
-    if (!query) return;
-
-    const onChange = () => {
-      if (!getStoredTheme()) {
-        setTheme(getSystemTheme());
-      }
-    };
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
 
   const toggle = useCallback(() => {
     setTheme((current) => {

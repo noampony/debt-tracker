@@ -38,6 +38,9 @@ export default defineConfig({
     },
   ],
   server: {
+    // Honor an externally-assigned port (e.g. preview tooling) when provided;
+    // falls back to Vite's default (5173) for a normal `npm run dev`.
+    port: process.env.PORT ? Number(process.env.PORT) : undefined,
     proxy: {
       "/api": {
         target: "http://localhost:3001",
