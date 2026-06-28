@@ -5,6 +5,7 @@ import { useAuth } from "./AuthContext";
 import { Button } from "../components/primitives/Button";
 import { Card } from "../components/primitives/Card";
 import { TextInput } from "../components/primitives/TextInput";
+import { ThemeToggle } from "../components/primitives/ThemeToggle";
 
 type AuthMode = "login" | "register";
 
@@ -53,6 +54,7 @@ export function AuthPage() {
 
   return (
     <div className="auth-viewport">
+      <ThemeToggle className="auth-theme-toggle" />
       <div className="auth-shell">
         <header className="auth-header">
           <img className="app-logo auth-logo" src="/debt-tracker-logo.png" alt="" aria-hidden="true" />
