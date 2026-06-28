@@ -9,12 +9,14 @@ interface TransactionLike {
   direction: string;
 }
 
+const POSITIVE_DIRECTIONS = new Set(["member_owes_user", "user_returned_to_member"]);
+
 /**
  * Returns the signed balance contribution of a single transaction.
  * Positive means the member owes the user; negative means the user owes the member.
  */
 export function getSignedAmount(transaction: TransactionLike): number {
-  return transaction.direction === "member_owes_user"
+  return POSITIVE_DIRECTIONS.has(transaction.direction)
     ? transaction.amountMinor
     : -transaction.amountMinor;
 }

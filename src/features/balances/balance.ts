@@ -1,4 +1,4 @@
-import type { Transaction } from "../transactions/types";
+import type { Transaction, TransactionDirection } from "../transactions/types";
 
 export type MemberBalance = {
   memberId: string;
@@ -12,8 +12,13 @@ export type BalanceSummary = {
   netBalanceMinor: number;
 };
 
+const POSITIVE_DIRECTIONS = new Set<TransactionDirection>([
+  "member_owes_user",
+  "user_returned_to_member",
+]);
+
 export function calculateSignedTransactionAmount(transaction: Transaction): number {
-  return transaction.direction === "member_owes_user" ? transaction.amountMinor : -transaction.amountMinor;
+  return POSITIVE_DIRECTIONS.has(transaction.direction) ? transaction.amountMinor : -transaction.amountMinor;
 }
 
 export function calculateMemberBalance(memberId: string, transactions: Transaction[]): number {

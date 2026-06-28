@@ -277,7 +277,7 @@ describe("App", () => {
     await user.selectOptions(screen.getByLabelText(ui.transaction.memberLabel), "member-1");
     await user.type(screen.getByLabelText(ui.transaction.amountLabel), "42.50");
     await user.click(screen.getByLabelText(ui.transaction.userOwesMemberLabel));
-    await user.type(screen.getByLabelText(ui.transaction.reasonLabel), "נסיעה");
+    await user.selectOptions(screen.getByLabelText(ui.transaction.reasonLabel), "נסיעה");
     await user.click(screen.getByRole("button", { name: ui.actions.save }));
 
     expect(await within(userOwesCard).findByText(/42.50/)).toBeInTheDocument();
@@ -362,7 +362,7 @@ describe("App", () => {
 
   it("opens the add transaction form with today's date, Hebrew labels, and common reason suggestions", async () => {
     const user = userEvent.setup();
-    const { container } = render(
+    render(
       <App
         repository={createMemoryRepository([
           {
@@ -381,8 +381,9 @@ describe("App", () => {
     expect(screen.getByLabelText(ui.transaction.memberLabel)).toBeInTheDocument();
     expect(screen.getByLabelText(ui.transaction.amountLabel)).toHaveAttribute("inputmode", "decimal");
     expect(screen.getByText(ui.transaction.directionLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(ui.transaction.reasonLabel)).toHaveAttribute("list", "transaction-reason-suggestions");
-    expect(getDatalistOptions(container, "transaction-reason-suggestions")).toEqual(ui.transaction.commonReasons);
+    const reasonSelect = screen.getByLabelText(ui.transaction.reasonLabel) as HTMLSelectElement;
+    const selectOptionValues = Array.from(reasonSelect.options).map((o) => o.value).filter(Boolean);
+    expect(selectOptionValues).toEqual([...ui.transaction.commonReasons]);
     expect((screen.getByLabelText(ui.transaction.dateLabel) as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(screen.getByLabelText(ui.transaction.notesLabel)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: ui.actions.cancel })).toBeInTheDocument();
@@ -424,7 +425,8 @@ describe("App", () => {
     await user.click(screen.getAllByRole("button", { name: ui.actions.newTransaction })[0]);
     await user.selectOptions(screen.getByLabelText(ui.transaction.memberLabel), "member-1");
     await user.type(screen.getByLabelText(ui.transaction.amountLabel), amount);
-    await user.type(screen.getByLabelText(ui.transaction.reasonLabel), "ארוחה");
+    await user.selectOptions(screen.getByLabelText(ui.transaction.reasonLabel), "אחר");
+    await user.type(screen.getByPlaceholderText(ui.transaction.reasonPlaceholder), "ארוחה");
     await user.click(screen.getByRole("button", { name: ui.actions.save }));
 
     expect(await screen.findByText(expectedError)).toBeInTheDocument();
@@ -452,7 +454,7 @@ describe("App", () => {
     await user.selectOptions(screen.getByLabelText(ui.transaction.memberLabel), "member-1");
     await user.type(screen.getByLabelText(ui.transaction.amountLabel), "42.50");
     await user.click(screen.getByLabelText(ui.transaction.userOwesMemberLabel));
-    await user.type(screen.getByLabelText(ui.transaction.reasonLabel), "נסיעה");
+    await user.selectOptions(screen.getByLabelText(ui.transaction.reasonLabel), "נסיעה");
     await user.type(screen.getByLabelText(ui.transaction.notesLabel), "מונית");
     await user.click(screen.getByRole("button", { name: ui.actions.save }));
 
@@ -711,7 +713,8 @@ describe("App", () => {
     await user.click(screen.getAllByRole("button", { name: ui.actions.newTransaction })[0]);
     await user.selectOptions(screen.getByLabelText(ui.transaction.memberLabel), "member-1");
     await user.type(screen.getByLabelText(ui.transaction.amountLabel), "50");
-    await user.type(screen.getByLabelText(ui.transaction.reasonLabel), "ארוחה");
+    await user.selectOptions(screen.getByLabelText(ui.transaction.reasonLabel), "אחר");
+    await user.type(screen.getByPlaceholderText(ui.transaction.reasonPlaceholder), "ארוחה");
     await user.click(screen.getByRole("button", { name: ui.actions.save }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(ui.error.transactionCreateFailed);
@@ -1092,12 +1095,8 @@ describe("App", () => {
 
       expect(screen.getByRole("form", { name: ui.transaction.editTransactionTitle })).toBeInTheDocument();
       expect(screen.getByLabelText(ui.transaction.amountLabel)).toHaveValue("50");
-      expect(screen.getByLabelText(ui.transaction.reasonLabel)).toHaveValue("ארוחה");
-      expect(screen.getByLabelText(ui.transaction.reasonLabel)).toHaveAttribute(
-        "list",
-        "edit-tx-reason-suggestions-tx-1",
-      );
-      expect(getDatalistOptions(container, "edit-tx-reason-suggestions-tx-1")).toEqual(ui.transaction.commonReasons);
+      expect(screen.getByLabelText(ui.transaction.reasonLabel)).toHaveValue("אחר");
+      expect(screen.getByPlaceholderText(ui.transaction.reasonPlaceholder)).toHaveValue("ארוחה");
     });
 
     it("saves edited transaction with a common reason and updates balance", async () => {
@@ -1125,9 +1124,7 @@ describe("App", () => {
       const amountInput = screen.getByLabelText(ui.transaction.amountLabel);
       await user.clear(amountInput);
       await user.type(amountInput, "100");
-      const titleInput = screen.getByLabelText(ui.transaction.reasonLabel);
-      await user.clear(titleInput);
-      await user.type(titleInput, "מתנה");
+      await user.selectOptions(screen.getByLabelText(ui.transaction.reasonLabel), "מתנה");
       await user.click(screen.getByRole("button", { name: ui.actions.save }));
 
       expect(await screen.findByRole("heading", { level: 3, name: "מתנה" })).toBeInTheDocument();

@@ -26,7 +26,12 @@ export const updateMemberSchema = z.object({
     .transform((s) => s.trim()),
 });
 
-const VALID_DIRECTIONS = ["member_owes_user", "user_owes_member"] as const;
+const VALID_DIRECTIONS = [
+  "member_owes_user",
+  "user_owes_member",
+  "member_returned_to_user",
+  "user_returned_to_member",
+] as const;
 const VALID_TYPES = ["manual", "reset_adjustment"] as const;
 
 export const createTransactionSchema = z.object({
@@ -36,7 +41,7 @@ export const createTransactionSchema = z.object({
     .int("Amount must be a whole number")
     .positive("Amount must be greater than zero"),
   direction: z.enum(VALID_DIRECTIONS, {
-    error: "Direction must be member_owes_user or user_owes_member",
+    error: "Invalid direction value",
   }),
   title: z
     .string()
@@ -56,7 +61,7 @@ export const updateTransactionSchema = z.object({
     .int("Amount must be a whole number")
     .positive("Amount must be greater than zero"),
   direction: z.enum(VALID_DIRECTIONS, {
-    error: "Direction must be member_owes_user or user_owes_member",
+    error: "Invalid direction value",
   }),
   title: z
     .string()
