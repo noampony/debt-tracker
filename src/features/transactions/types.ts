@@ -1,4 +1,8 @@
-export type TransactionDirection = "member_owes_user" | "user_owes_member";
+export type TransactionDirection =
+  | "member_owes_user"
+  | "user_owes_member"
+  | "member_returned_to_user"
+  | "user_returned_to_member";
 
 export type Transaction = {
   id: string;

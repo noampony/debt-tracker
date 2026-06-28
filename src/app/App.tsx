@@ -29,15 +29,6 @@ type TransactionFormErrors = {
   transactionDate?: string;
 };
 
-function TransactionReasonSuggestions({ id }: { id: string }) {
-  return (
-    <datalist id={id}>
-      {ui.transaction.commonReasons.map((reason) => (
-        <option key={reason} value={reason} />
-      ))}
-    </datalist>
-  );
-}
 
 function formatMemberBalance(member: Member, balanceMinor: number): string {
   if (balanceMinor > 0) {
@@ -52,11 +43,16 @@ function formatMemberBalance(member: Member, balanceMinor: number): string {
 }
 
 function formatTransactionDirection(member: Member, transaction: Transaction): string {
-  if (transaction.direction === "member_owes_user") {
-    return `${member.name} חייב לך`;
+  switch (transaction.direction) {
+    case "member_owes_user":
+      return `${member.name} חייב לך`;
+    case "user_owes_member":
+      return `אתה חייב ל${member.name}`;
+    case "member_returned_to_user":
+      return `${member.name} החזיר לך`;
+    case "user_returned_to_member":
+      return `אתה החזרת ל${member.name}`;
   }
-
-  return `אתה חייב ל${member.name}`;
 }
 
 function getTransactionSortTime(transaction: Transaction): number {
@@ -91,6 +87,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   const [transactionAmount, setTransactionAmount] = useState("");
   const [transactionDirection, setTransactionDirection] = useState<TransactionDirection>("member_owes_user");
   const [transactionTitle, setTransactionTitle] = useState("");
+  const [transactionReasonIsCustom, setTransactionReasonIsCustom] = useState(false);
   const [transactionDate, setTransactionDate] = useState(todayDateIso);
   const [transactionNotes, setTransactionNotes] = useState("");
   const [transactionErrors, setTransactionErrors] = useState<TransactionFormErrors>({});
@@ -114,6 +111,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   const [editTransactionAmount, setEditTransactionAmount] = useState("");
   const [editTransactionDirection, setEditTransactionDirection] = useState<TransactionDirection>("member_owes_user");
   const [editTransactionTitle, setEditTransactionTitle] = useState("");
+  const [editTransactionReasonIsCustom, setEditTransactionReasonIsCustom] = useState(false);
   const [editTransactionDate, setEditTransactionDate] = useState("");
   const [editTransactionNotes, setEditTransactionNotes] = useState("");
   const [editTransactionErrors, setEditTransactionErrors] = useState<TransactionFormErrors>({});
@@ -347,6 +345,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     setEditTransactionAmount(String(transaction.amountMinor / 100));
     setEditTransactionDirection(transaction.direction);
     setEditTransactionTitle(transaction.title);
+    setEditTransactionReasonIsCustom(!(ui.transaction.commonReasons as readonly string[]).includes(transaction.title));
     setEditTransactionDate(transaction.transactionDate);
     setEditTransactionNotes(transaction.notes ?? "");
     setEditTransactionErrors({});
@@ -358,6 +357,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     setEditTransactionAmount("");
     setEditTransactionDirection("member_owes_user");
     setEditTransactionTitle("");
+    setEditTransactionReasonIsCustom(false);
     setEditTransactionDate("");
     setEditTransactionNotes("");
     setEditTransactionErrors({});
@@ -497,6 +497,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     setTransactionAmount("");
     setTransactionDirection("member_owes_user");
     setTransactionTitle("");
+    setTransactionReasonIsCustom(false);
     setTransactionDate(getTodayDateIso());
     setTransactionNotes("");
     setTransactionErrors({});
@@ -509,6 +510,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     setTransactionAmount("");
     setTransactionDirection("member_owes_user");
     setTransactionTitle("");
+    setTransactionReasonIsCustom(false);
     setTransactionDate(getTodayDateIso());
     setTransactionNotes("");
     setTransactionErrors({});
@@ -732,26 +734,67 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                 />
                 <span>{ui.transaction.userOwesMemberLabel}</span>
               </label>
+              <label>
+                <input
+                  type="radio"
+                  name="transaction-direction"
+                  value="member_returned_to_user"
+                  checked={transactionDirection === "member_returned_to_user"}
+                  onChange={() => setTransactionDirection("member_returned_to_user")}
+                />
+                <span>{ui.transaction.memberReturnedToUserLabel}</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="transaction-direction"
+                  value="user_returned_to_member"
+                  checked={transactionDirection === "user_returned_to_member"}
+                  onChange={() => setTransactionDirection("user_returned_to_member")}
+                />
+                <span>{ui.transaction.userReturnedToMemberLabel}</span>
+              </label>
             </fieldset>
 
-            <TextInput
-              label={ui.transaction.reasonLabel}
-              value={transactionTitle}
-              list="transaction-reason-suggestions"
-              placeholder={ui.transaction.reasonPlaceholder}
-              onChange={(event) => {
-                setTransactionTitle(event.target.value);
-                setTransactionErrors((currentErrors) => ({ ...currentErrors, title: undefined }));
-              }}
-              aria-invalid={transactionErrors.title ? "true" : "false"}
-              aria-describedby={transactionErrors.title ? "transaction-title-error" : undefined}
-            />
+            <label className="field">
+              <span>{ui.transaction.reasonLabel}</span>
+              <select
+                value={transactionReasonIsCustom ? "אחר" : transactionTitle}
+                onChange={(e) => {
+                  if (e.target.value === "אחר") {
+                    setTransactionReasonIsCustom(true);
+                    setTransactionTitle("");
+                  } else {
+                    setTransactionReasonIsCustom(false);
+                    setTransactionTitle(e.target.value);
+                    setTransactionErrors((err) => ({ ...err, title: undefined }));
+                  }
+                }}
+              >
+                <option value="" disabled>{ui.transaction.reasonPlaceholder}</option>
+                {ui.transaction.commonReasons.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </label>
+            {transactionReasonIsCustom && (
+              <TextInput
+                label=""
+                value={transactionTitle}
+                placeholder={ui.transaction.reasonPlaceholder}
+                onChange={(event) => {
+                  setTransactionTitle(event.target.value);
+                  setTransactionErrors((err) => ({ ...err, title: undefined }));
+                }}
+                aria-invalid={transactionErrors.title ? "true" : "false"}
+                aria-describedby={transactionErrors.title ? "transaction-title-error" : undefined}
+              />
+            )}
             {transactionErrors.title && (
               <p className="field-error" id="transaction-title-error" role="alert">
                 {transactionErrors.title}
               </p>
             )}
-            <TransactionReasonSuggestions id="transaction-reason-suggestions" />
 
             <TextInput
               label={ui.transaction.dateLabel}
@@ -917,25 +960,66 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
               />
               <span>{ui.transaction.userOwesMemberLabel}</span>
             </label>
+            <label>
+              <input
+                type="radio"
+                name="edit-tx-direction"
+                value="member_returned_to_user"
+                checked={editTransactionDirection === "member_returned_to_user"}
+                onChange={() => setEditTransactionDirection("member_returned_to_user")}
+              />
+              <span>{ui.transaction.memberReturnedToUserLabel}</span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="edit-tx-direction"
+                value="user_returned_to_member"
+                checked={editTransactionDirection === "user_returned_to_member"}
+                onChange={() => setEditTransactionDirection("user_returned_to_member")}
+              />
+              <span>{ui.transaction.userReturnedToMemberLabel}</span>
+            </label>
           </fieldset>
-          <TextInput
-            label={ui.transaction.reasonLabel}
-            value={editTransactionTitle}
-            list={`edit-tx-reason-suggestions-${transaction.id}`}
-            placeholder={ui.transaction.reasonPlaceholder}
-            onChange={(event) => {
-              setEditTransactionTitle(event.target.value);
-              setEditTransactionErrors((e) => ({ ...e, title: undefined }));
-            }}
-            aria-invalid={editTransactionErrors.title ? "true" : "false"}
-            aria-describedby={editTransactionErrors.title ? "edit-tx-title-error" : undefined}
-          />
+          <label className="field">
+            <span>{ui.transaction.reasonLabel}</span>
+            <select
+              value={editTransactionReasonIsCustom ? "אחר" : editTransactionTitle}
+              onChange={(e) => {
+                if (e.target.value === "אחר") {
+                  setEditTransactionReasonIsCustom(true);
+                  setEditTransactionTitle("");
+                } else {
+                  setEditTransactionReasonIsCustom(false);
+                  setEditTransactionTitle(e.target.value);
+                  setEditTransactionErrors((err) => ({ ...err, title: undefined }));
+                }
+              }}
+            >
+              <option value="" disabled>{ui.transaction.reasonPlaceholder}</option>
+              {ui.transaction.commonReasons.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+          {editTransactionReasonIsCustom && (
+            <TextInput
+              label=""
+              value={editTransactionTitle}
+              placeholder={ui.transaction.reasonPlaceholder}
+              onChange={(event) => {
+                setEditTransactionTitle(event.target.value);
+                setEditTransactionErrors((err) => ({ ...err, title: undefined }));
+              }}
+              aria-invalid={editTransactionErrors.title ? "true" : "false"}
+              aria-describedby={editTransactionErrors.title ? "edit-tx-title-error" : undefined}
+            />
+          )}
           {editTransactionErrors.title && (
             <p className="field-error" id="edit-tx-title-error" role="alert">
               {editTransactionErrors.title}
             </p>
           )}
-          <TransactionReasonSuggestions id={`edit-tx-reason-suggestions-${transaction.id}`} />
           <TextInput
             label={ui.transaction.dateLabel}
             type="date"
