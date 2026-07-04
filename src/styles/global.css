@@ -980,6 +980,11 @@ h3 {
   animation: dialog-in var(--dur) var(--ease);
 }
 
+.transaction-dialog-card {
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
 .dialog-card h3 {
   font-size: 1.2rem;
   font-weight: 800;

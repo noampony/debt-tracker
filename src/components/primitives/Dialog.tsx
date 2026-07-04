@@ -1,4 +1,11 @@
-import { type KeyboardEvent, type PropsWithChildren, useCallback, useEffect, useRef } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  type PropsWithChildren,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 
 /**
  * Accessible dialog component.
@@ -30,6 +37,10 @@ type DialogProps = PropsWithChildren<{
 export function Dialog({ isOpen, titleId, onClose, children }: DialogProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  // Tracks whether the pointer press started on the backdrop itself, so a
+  // click-outside only closes when both press and release land on the backdrop
+  // (not when a text-selection drag inside the dialog ends over the backdrop).
+  const pressedOnBackdropRef = useRef(false);
 
   // Move focus into the dialog when opened; return focus when closed.
   useEffect(() => {
@@ -83,10 +94,30 @@ export function Dialog({ isOpen, titleId, onClose, children }: DialogProps) {
     [onClose],
   );
 
+  // Close when the user clicks the backdrop (any area outside the dialog card).
+  const handleBackdropMouseDown = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    pressedOnBackdropRef.current = event.target === event.currentTarget;
+  }, []);
+
+  const handleBackdropClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (event.target === event.currentTarget && pressedOnBackdropRef.current) {
+        onClose();
+      }
+      pressedOnBackdropRef.current = false;
+    },
+    [onClose],
+  );
+
   if (!isOpen) return null;
 
   return (
-    <div className="dialog-backdrop" role="presentation">
+    <div
+      className="dialog-backdrop"
+      role="presentation"
+      onMouseDown={handleBackdropMouseDown}
+      onClick={handleBackdropClick}
+    >
       <div
         ref={containerRef}
         role="dialog"

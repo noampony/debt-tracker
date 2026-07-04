@@ -664,13 +664,9 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   }
 
   function renderTransactionForm() {
-    if (!isTransactionFormOpen) {
-      return null;
-    }
-
     return (
-      <section className="section-stack" aria-labelledby="add-transaction-title">
-        <Card>
+      <Dialog isOpen={isTransactionFormOpen} titleId="add-transaction-title" onClose={closeTransactionForm}>
+        <Card className="dialog-card transaction-dialog-card">
           <form className="form-stack" aria-labelledby="add-transaction-title" onSubmit={handleAddTransactionSubmit}>
             <div className="form-heading">
               <h2 id="add-transaction-title">{ui.transaction.addTitle}</h2>
@@ -850,7 +846,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
             </div>
           </form>
         </Card>
-      </section>
+      </Dialog>
     );
   }
 
@@ -918,16 +914,17 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     );
   }
 
-  function renderEditTransactionForm(transaction: Transaction) {
+  function renderEditTransactionForm() {
     return (
-      <Card key={transaction.id} className="transaction-card">
-        <form
-          className="form-stack"
-          aria-labelledby={`edit-tx-title-${transaction.id}`}
-          onSubmit={handleEditTransactionSubmit}
-        >
+      <Dialog isOpen={!!editingTransactionId} titleId="edit-transaction-title" onClose={closeEditTransaction}>
+        <Card className="dialog-card transaction-dialog-card">
+          <form
+            className="form-stack"
+            aria-labelledby="edit-transaction-title"
+            onSubmit={handleEditTransactionSubmit}
+          >
           <div className="form-heading">
-            <h3 id={`edit-tx-title-${transaction.id}`}>{ui.transaction.editTransactionTitle}</h3>
+            <h3 id="edit-transaction-title">{ui.transaction.editTransactionTitle}</h3>
           </div>
           <TextInput
             label={ui.transaction.amountLabel}
@@ -1040,10 +1037,10 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
               setEditTransactionErrors((e) => ({ ...e, transactionDate: undefined }));
             }}
           />
-          <label className="field" htmlFor={`edit-tx-notes-${transaction.id}`}>
+          <label className="field" htmlFor="edit-tx-notes">
             <span>{ui.transaction.notesLabel}</span>
             <textarea
-              id={`edit-tx-notes-${transaction.id}`}
+              id="edit-tx-notes"
               value={editTransactionNotes}
               placeholder={ui.transaction.notesPlaceholder}
               onChange={(event) => setEditTransactionNotes(event.target.value)}
@@ -1062,8 +1059,9 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
               {ui.actions.cancel}
             </Button>
           </div>
-        </form>
-      </Card>
+          </form>
+        </Card>
+      </Dialog>
     );
   }
 
@@ -1187,10 +1185,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
           </div>
           <div className="card-list history-list">
             {selectedMemberTransactions.length === 0 && <p className="empty-state">{ui.transaction.historyEmpty}</p>}
-            {selectedMemberTransactions.map((transaction) =>
-              editingTransactionId === transaction.id ? (
-                renderEditTransactionForm(transaction)
-              ) : (
+            {selectedMemberTransactions.map((transaction) => (
                 <Card key={transaction.id} className="transaction-card">
                   <div className="transaction-card-header">
                     <div>
@@ -1232,10 +1227,11 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                     </Button>
                   </div>
                 </Card>
-              ),
-            )}
+            ))}
           </div>
         </section>
+
+        {renderEditTransactionForm()}
       </AppShell>
     );
   }
