@@ -8,6 +8,7 @@ export const ui = {
     newTransaction: "תנועה חדשה",
     save: "שמירה",
     cancel: "ביטול",
+    close: "סגירה",
     back: "חזרה",
     view: "צפייה",
     addTransaction: "תנועה חדשה",
@@ -106,8 +107,6 @@ export const ui = {
   theme: {
     switchToDark: "מעבר למצב כהה",
     switchToLight: "מעבר למצב בהיר",
-    hint: "כאן עוברים בין מצב כהה לבהיר",
-    hintDismiss: "סגירה",
   },
   loading: {
     main: "טוען נתונים...",

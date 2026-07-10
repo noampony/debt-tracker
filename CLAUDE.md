@@ -91,30 +91,7 @@ All user-facing strings are in **`src/i18n/he.ts`** (Hebrew). Never hardcode UI 
 
 The app defaults to **dark** theme. Theme is toggled via `data-theme` on `<html>` and persisted in localStorage. `src/lib/theme.ts` manages the theme; an inline script in `index.html` applies the stored theme before React hydrates (to avoid flash).
 
-## Scheduled Code Removals
-
-**If today's date is past the deadline below, remove the code before doing anything else.**
-
-### Login confetti — remove on/after 2026-07-19
-
-A temporary 3-week launch celebration that fires confetti on successful login/registration. The effect already stops firing on its own after the date (date guard in `src/lib/confetti.ts`), but the dead code should be cleaned up:
-
-1. Delete `src/lib/confetti.ts`.
-2. In `src/auth/AuthContext.tsx`, remove the `celebrate` import and both `celebrate()` calls (in `login` and `register` success paths).
-3. Run `npm uninstall canvas-confetti @types/canvas-confetti`.
-4. Remove the matching task from `docs/TODO.md` ("Scheduled Removals").
-
-### Theme-toggle hint popup — remove on/after 2026-07-12
-
-A temporary 2-week coachmark popup shown next to the dark/light theme toggle button. It already stops rendering after the date (date guard in `src/components/primitives/ThemeHint.tsx`), but the dead code should be cleaned up:
-
-1. Delete `src/components/primitives/ThemeHint.tsx`.
-2. In `src/components/primitives/ThemeToggle.tsx`, remove the `ThemeHint` import and the `<ThemeHint />` render.
-3. Remove `hint` and `hintDismiss` from `ui.theme` in `src/i18n/he.ts`.
-4. Remove the `.theme-hint*` styles and `theme-hint-in` keyframes from `src/styles/global.css`.
-5. Remove the matching task from `docs/TODO.md` ("Scheduled Removals").
-
-> Note: the **default dark mode** change is permanent — do not revert it when removing the hint.
+## Implementation Notes
 
 ### Balance calculation
 

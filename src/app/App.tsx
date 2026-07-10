@@ -667,6 +667,15 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     return (
       <Dialog isOpen={isTransactionFormOpen} titleId="add-transaction-title" onClose={closeTransactionForm}>
         <Card className="dialog-card transaction-dialog-card">
+          <button
+            type="button"
+            className="dialog-close"
+            aria-label={ui.actions.close}
+            onClick={closeTransactionForm}
+            disabled={isSavingTransaction}
+          >
+            ×
+          </button>
           <form className="form-stack" aria-labelledby="add-transaction-title" onSubmit={handleAddTransactionSubmit}>
             <div className="form-heading">
               <h2 id="add-transaction-title">{ui.transaction.addTitle}</h2>
@@ -824,6 +833,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
               <span>{ui.transaction.notesLabel}</span>
               <textarea
                 id="transaction-notes"
+                rows={1}
                 value={transactionNotes}
                 placeholder={ui.transaction.notesPlaceholder}
                 onChange={(event) => setTransactionNotes(event.target.value)}
@@ -918,6 +928,15 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
     return (
       <Dialog isOpen={!!editingTransactionId} titleId="edit-transaction-title" onClose={closeEditTransaction}>
         <Card className="dialog-card transaction-dialog-card">
+          <button
+            type="button"
+            className="dialog-close"
+            aria-label={ui.actions.close}
+            onClick={closeEditTransaction}
+            disabled={isSavingEditTransaction}
+          >
+            ×
+          </button>
           <form
             className="form-stack"
             aria-labelledby="edit-transaction-title"
@@ -1041,6 +1060,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
             <span>{ui.transaction.notesLabel}</span>
             <textarea
               id="edit-tx-notes"
+              rows={1}
               value={editTransactionNotes}
               placeholder={ui.transaction.notesPlaceholder}
               onChange={(event) => setEditTransactionNotes(event.target.value)}

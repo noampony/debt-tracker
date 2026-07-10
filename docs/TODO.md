@@ -31,53 +31,6 @@ For every task:
 
 ---
 
-# 0. Scheduled Removals (Time-Boxed Code)
-
-Temporary code that must be deleted once its date has passed. An AI agent
-working on this project after the date should remove the code and then delete
-the corresponding task here.
-
-* [ ] **Remove login confetti celebration — on/after 2026-07-19.**
-
-  A temporary 3-week launch celebration that fires confetti on successful login
-  and registration. It already stops firing on its own after the date (a guard
-  in `src/lib/confetti.ts`), so after 2026-07-19 the code is dead and should be
-  removed entirely:
-
-  1. Delete `src/lib/confetti.ts`.
-  2. Remove the `celebrate` import and both `celebrate()` calls in
-     `src/auth/AuthContext.tsx` (the `login` and `register` success paths).
-  3. Uninstall the now-unused dependencies:
-     `npm uninstall canvas-confetti @types/canvas-confetti`.
-  4. Delete this task.
-
-  Definition of Done: confetti code and dependencies are gone, `npm run build`
-  and `npm test` pass.
-
-* [ ] **Remove theme-toggle hint popup — on/after 2026-07-12.**
-
-  A temporary 2-week coachmark popup next to the dark/light theme toggle that
-  tells users the button switches the mode. It already stops rendering on its
-  own after the date (a guard in `src/components/primitives/ThemeHint.tsx`), so
-  after 2026-07-12 the code is dead and should be removed entirely:
-
-  1. Delete `src/components/primitives/ThemeHint.tsx`.
-  2. In `src/components/primitives/ThemeToggle.tsx`, remove the `ThemeHint`
-     import and the `<ThemeHint />` render. (The `.theme-toggle-wrap` wrapper
-     can stay — it is harmless — or collapse it back to a plain button.)
-  3. Remove the `hint` and `hintDismiss` strings from `ui.theme` in
-     `src/i18n/he.ts`.
-  4. Remove the `.theme-hint*` styles (and the `theme-hint-in` keyframes) from
-     `src/styles/global.css`.
-  5. Delete this task.
-
-  Note: this is independent of the **default dark mode** change made at the same
-  time — that one is permanent and must NOT be reverted.
-
-  Definition of Done: hint code is gone, `npm run build` and `npm test` pass.
-
----
-
 # 1. Project Foundation
 
 ## 1.1 Initialize Application
