@@ -981,8 +981,16 @@ h3 {
 }
 
 .transaction-dialog-card {
+  /* vh fallback first; dvh (dynamic viewport) accounts for the iOS Safari
+     toolbar so the card never grows past the actually-visible area and the
+     Save/Cancel buttons stay reachable. */
   max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
   overflow-y: auto;
+  /* Keep the touch scroll inside the card instead of chaining to the page
+     behind it (iOS otherwise scrolls the background). */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dialog-card h3 {
