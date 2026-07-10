@@ -833,6 +833,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
               <span>{ui.transaction.notesLabel}</span>
               <textarea
                 id="transaction-notes"
+                rows={1}
                 value={transactionNotes}
                 placeholder={ui.transaction.notesPlaceholder}
                 onChange={(event) => setTransactionNotes(event.target.value)}
@@ -1059,6 +1060,7 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
             <span>{ui.transaction.notesLabel}</span>
             <textarea
               id="edit-tx-notes"
+              rows={1}
               value={editTransactionNotes}
               placeholder={ui.transaction.notesPlaceholder}
               onChange={(event) => setEditTransactionNotes(event.target.value)}

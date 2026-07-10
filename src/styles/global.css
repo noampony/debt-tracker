@@ -675,10 +675,10 @@ h3 {
 .field select,
 .field textarea {
   width: 100%;
-  min-height: 50px;
+  min-height: 0;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  padding-block: 12px;
+  padding-block: 8px;
   padding-inline: 14px;
   color: var(--color-text);
   background: var(--color-surface-2);
@@ -695,7 +695,7 @@ h3 {
 }
 
 .field textarea {
-  min-height: 92px;
+  min-height: 0;
   resize: vertical;
 }
 
@@ -981,7 +981,6 @@ h3 {
 }
 
 .transaction-dialog-card {
-  position: relative;
   /* vh fallback first; dvh (dynamic viewport) accounts for the iOS Safari
      toolbar so the card never grows past the actually-visible area and the
      Save/Cancel buttons stay reachable. */
@@ -1000,13 +999,11 @@ h3 {
   line-height: 1.35;
 }
 
-/* Corner "X" close button for the transaction dialogs. Anchored to the inline
-   start (top-left in this RTL app) so it clears the sticky-scrolling content. */
+/* "X" close button for the transaction dialogs. Sits in its own row at the top
+   of the card, aligned to the top-right (inline-start in this RTL app), above
+   the heading — it does not overlap any content. */
 .dialog-close {
-  position: absolute;
-  top: 10px;
-  inset-inline-start: 10px;
-  z-index: 1;
+  justify-self: start;
   display: grid;
   place-items: center;
   width: 32px;
