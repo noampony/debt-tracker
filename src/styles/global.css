@@ -981,6 +981,7 @@ h3 {
 }
 
 .transaction-dialog-card {
+  position: relative;
   /* vh fallback first; dvh (dynamic viewport) accounts for the iOS Safari
      toolbar so the card never grows past the actually-visible area and the
      Save/Cancel buttons stay reachable. */
@@ -997,6 +998,40 @@ h3 {
   font-size: 1.2rem;
   font-weight: 800;
   line-height: 1.35;
+}
+
+/* Corner "X" close button for the transaction dialogs. Anchored to the inline
+   start (top-left in this RTL app) so it clears the sticky-scrolling content. */
+.dialog-close {
+  position: absolute;
+  top: 10px;
+  inset-inline-start: 10px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.dialog-close:hover:not(:disabled) {
+  background: var(--color-surface-2, rgba(127, 127, 127, 0.14));
+  color: var(--color-text);
+}
+
+.dialog-close:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .dialog-card p {
@@ -1065,87 +1100,11 @@ h3 {
   height: 20px;
 }
 
-/* Wrapper anchors the temporary theme hint popup to the toggle button.
-   Positioning utility classes (e.g. .auth-theme-toggle) are applied here. */
+/* Wraps the theme toggle button. Positioning utility classes
+   (e.g. .auth-theme-toggle) are applied here. */
 .theme-toggle-wrap {
   position: relative;
   display: inline-flex;
-}
-
-/* TODO(2026-07-19): remove .theme-hint* styles together with the ThemeHint
-   component (see src/components/primitives/ThemeHint.tsx). */
-.theme-hint {
-  position: absolute;
-  top: calc(100% + 8px);
-  inset-inline-end: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: max-content;
-  max-width: min(240px, 70vw);
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
-  font-size: 0.82rem;
-  line-height: 1.35;
-  animation: theme-hint-in 200ms var(--ease) both;
-}
-
-/* Little arrow pointing up toward the toggle button. */
-.theme-hint::before {
-  content: "";
-  position: absolute;
-  bottom: 100%;
-  inset-inline-end: 12px;
-  border: 6px solid transparent;
-  border-bottom-color: var(--color-border);
-}
-
-.theme-hint-text {
-  flex: 1 1 auto;
-}
-
-.theme-hint-dismiss {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.theme-hint-dismiss:hover {
-  background: var(--color-surface-3);
-  color: var(--color-text);
-}
-
-@keyframes theme-hint-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-hint {
-    animation: none;
-  }
 }
 
 /* ===========================================================================

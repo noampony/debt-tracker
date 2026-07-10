@@ -2,12 +2,9 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useState,
   type PropsWithChildren,
 } from "react";
-
-import { celebrate } from "../lib/confetti";
 
 const API_BASE = "/api";
 const AUTH_STORAGE_KEY = "debt-tracker:auth";
@@ -66,12 +63,6 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [stored, setStored] = useState<StoredAuth | null>(readStoredAuth);
 
-  // Fire confetti on page load for users who are already logged in via a saved session.
-  useEffect(() => {
-    if (stored) celebrate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   function persist(auth: StoredAuth | null) {
     writeStoredAuth(auth);
     setStored(auth);
@@ -91,7 +82,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     persist({ token: body.token!, user: body.user! });
-    celebrate();
   }, []);
 
   const register = useCallback(async (email: string, password: string): Promise<void> => {
@@ -108,7 +98,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     persist({ token: body.token!, user: body.user! });
-    celebrate();
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {

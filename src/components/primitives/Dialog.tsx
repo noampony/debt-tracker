@@ -25,6 +25,18 @@ const FOCUSABLE_QUERY = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
+// Same as FOCUSABLE_QUERY but without <select>: focusing a <select> on iOS
+// Safari immediately pops open its native option picker, so we never make a
+// select the initial focus target when the dialog opens. Selects remain in the
+// Tab cycle via FOCUSABLE_QUERY.
+const INITIAL_FOCUS_QUERY = [
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "textarea:not([disabled])",
+  "a[href]",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 type DialogProps = PropsWithChildren<{
   /** Whether the dialog is currently open. */
   isOpen: boolean;
@@ -46,7 +58,7 @@ export function Dialog({ isOpen, titleId, onClose, children }: DialogProps) {
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = (document.activeElement as HTMLElement) ?? null;
-      const firstFocusable = containerRef.current?.querySelector<HTMLElement>(FOCUSABLE_QUERY);
+      const firstFocusable = containerRef.current?.querySelector<HTMLElement>(INITIAL_FOCUS_QUERY);
       if (firstFocusable) {
         firstFocusable.focus();
       } else {

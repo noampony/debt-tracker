@@ -1,6 +1,5 @@
 import { ui } from "../../i18n/he";
 import { useTheme } from "../../lib/theme";
-import { ThemeHint } from "./ThemeHint";
 
 type ThemeToggleProps = {
   className?: string;
@@ -47,7 +46,6 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
         </svg>
       )}
       </button>
-      <ThemeHint />
     </span>
   );
 }
