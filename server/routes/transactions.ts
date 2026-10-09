@@ -18,6 +18,7 @@ const TX_SELECT = {
   notes: true,
   transactionDate: true,
   type: true,
+  settlesTransactionId: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -31,6 +32,7 @@ type TxRow = {
   notes: string | null;
   transactionDate: string;
   type: string;
+  settlesTransactionId: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -94,8 +96,7 @@ router.post("/transactions", async (req, res) => {
     return;
   }
 
-  const { memberId, amountMinor, direction, title, notes, transactionDate, type } =
-    result.data;
+  const { memberId, amountMinor, direction, title, notes, transactionDate, type, settlesTransactionId } = result.data;
 
   const member = await db.member.findFirst({
     where: { id: memberId, userId: req.userId },
@@ -105,8 +106,45 @@ router.post("/transactions", async (req, res) => {
     return;
   }
 
+  if (settlesTransactionId) {
+    if (type !== "manual") {
+      res.status(400).json({ error: "Settlement transactions must be manual" });
+      return;
+    }
+
+    const sourceTransaction = await db.transaction.findFirst({
+      where: { id: settlesTransactionId, memberId, member: { userId: req.userId } },
+      select: { amountMinor: true, direction: true },
+    });
+    const expectedSettlementDirection =
+      sourceTransaction?.direction === "member_owes_user"
+        ? "member_returned_to_user"
+        : sourceTransaction?.direction === "user_owes_member"
+          ? "user_returned_to_member"
+          : null;
+
+    if (
+      !sourceTransaction ||
+      !expectedSettlementDirection ||
+      amountMinor !== sourceTransaction.amountMinor ||
+      direction !== expectedSettlementDirection
+    ) {
+      res.status(400).json({ error: "Invalid transaction settlement link" });
+      return;
+    }
+  }
+
   const transaction = await db.transaction.create({
-    data: { memberId, amountMinor, direction, title: encode(title), notes: notes != null ? encode(notes) : notes, transactionDate, type },
+    data: {
+      memberId,
+      amountMinor,
+      direction,
+      title: encode(title),
+      notes: notes != null ? encode(notes) : notes,
+      transactionDate,
+      type,
+      settlesTransactionId,
+    },
     select: TX_SELECT,
   });
 
@@ -216,4 +254,3 @@ router.delete("/transactions/:id", async (req, res) => {
 });
 
 export { router as transactionsRouter };
-

@@ -15,6 +15,7 @@ export const ui = {
     viewDetails: "פרטים",
     edit: "עריכה",
     delete: "מחיקה",
+    settle: "התקזזנו",
   },
   home: {
     todayLabel: "היום",
@@ -78,6 +79,7 @@ export const ui = {
     reasonRequired: "יש להזין סיבה",
     dateRequired: "יש לבחור תאריך",
     historyTitle: "היסטוריית תנועות",
+    settledTag: "קוזז",
     historyEmpty: "אין עדיין תנועות מול איש הקשר הזה",
     editTransactionTitle: "עריכת תנועה",
     deleteTransactionConfirmTitle: "מחיקת תנועה",
@@ -116,6 +118,7 @@ export const ui = {
     resetting: "מאפס...",
     deletingMember: "מוחק...",
     deletingTransaction: "מוחק...",
+    resolvingTransaction: "מעדכן...",
   },
   error: {
     loadFailed: "שגיאה בטעינת הנתונים. נסה/י לרענן את הדף.",
@@ -125,6 +128,7 @@ export const ui = {
     transactionCreateFailed: "שגיאה בשמירת התנועה. נסה/י שנית.",
     transactionUpdateFailed: "שגיאה בעדכון התנועה. נסה/י שנית.",
     transactionDeleteFailed: "שגיאה במחיקת התנועה. נסה/י שנית.",
+    transactionResolveFailed: "שגיאה בסימון החוב כמיושב. נסה/י שנית.",
     resetFailed: "שגיאה באיפוס החוב. נסה/י שנית.",
   },
 } as const;

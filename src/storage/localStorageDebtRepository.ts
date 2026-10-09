@@ -19,7 +19,12 @@ type BrowserStorage = Pick<Storage, "getItem" | "setItem">;
 
 type CollectionKey = keyof typeof LOCAL_STORAGE_KEYS;
 
-const transactionDirections: readonly TransactionDirection[] = ["member_owes_user", "user_owes_member"];
+const transactionDirections: readonly TransactionDirection[] = [
+  "member_owes_user",
+  "user_owes_member",
+  "member_returned_to_user",
+  "user_returned_to_member",
+];
 const transactionTypes: readonly Transaction["type"][] = ["manual", "reset_adjustment"];
 
 function createEmptyCollection<TRecord>(): StorageCollection<TRecord> {
@@ -67,6 +72,7 @@ function isTransaction(value: unknown): value is Transaction {
     isNonEmptyString(value.transactionDate) &&
     isNonEmptyString(value.createdAt) &&
     isNonEmptyString(value.updatedAt) &&
+    (value.settlesTransactionId === undefined || isNonEmptyString(value.settlesTransactionId)) &&
     transactionTypes.includes(value.type as Transaction["type"])
   );
 }
