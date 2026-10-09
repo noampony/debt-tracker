@@ -15,4 +15,5 @@ export type Transaction = {
   createdAt: string;
   updatedAt: string;
   type: "manual" | "reset_adjustment";
+  settlesTransactionId?: string;
 };

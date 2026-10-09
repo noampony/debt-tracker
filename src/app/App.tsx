@@ -132,6 +132,18 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
   const [deleteTransactionId, setDeleteTransactionId] = useState("");
   const [isDeletingTransaction, setIsDeletingTransaction] = useState(false);
   const [deleteTransactionError, setDeleteTransactionError] = useState("");
+  const [resolvingTransactionId, setResolvingTransactionId] = useState("");
+  const resolvedTransactionIds = useMemo(
+    () =>
+      new Set(
+        transactions
+          .map((transaction) => transaction.settlesTransactionId)
+          .filter((transactionId): transactionId is string => !!transactionId),
+      ),
+    [transactions],
+  );
+  const [resolveTransactionError, setResolveTransactionError] = useState("");
+  const [resolveTransactionErrorId, setResolveTransactionErrorId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -445,6 +457,46 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
       setDeleteTransactionError(ui.error.transactionDeleteFailed);
     } finally {
       setIsDeletingTransaction(false);
+    }
+  }
+
+  async function handleResolveTransaction(transaction: Transaction) {
+    if (resolvingTransactionId) return;
+
+    const directionByDebtDirection: Partial<Record<TransactionDirection, TransactionDirection>> = {
+      member_owes_user: "member_returned_to_user",
+      user_owes_member: "user_returned_to_member",
+    };
+    const direction = directionByDebtDirection[transaction.direction];
+
+    if (!direction) return;
+
+    setResolvingTransactionId(transaction.id);
+    setResolveTransactionError("");
+    setResolveTransactionErrorId("");
+
+    const now = new Date().toISOString();
+    const settlement: Transaction = {
+      id: createId(),
+      memberId: transaction.memberId,
+      amountMinor: transaction.amountMinor,
+      direction,
+      title: transaction.title,
+      transactionDate: getTodayDateIso(),
+      createdAt: now,
+      updatedAt: now,
+      type: "manual",
+      settlesTransactionId: transaction.id,
+    };
+
+    try {
+      const created = await repository.createTransaction(settlement);
+      setTransactions((currentTransactions) => [...currentTransactions, created]);
+    } catch {
+      setResolveTransactionError(ui.error.transactionResolveFailed);
+      setResolveTransactionErrorId(transaction.id);
+    } finally {
+      setResolvingTransactionId("");
     }
   }
 
@@ -1211,6 +1263,9 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                     <div>
                       <h3>{transaction.title}</h3>
                       <p>{formatTransactionDirection(selectedMember, transaction)}</p>
+                      {resolvedTransactionIds.has(transaction.id) && (
+                        <span className="transaction-settled-tag">{ui.transaction.settledTag}</span>
+                      )}
                     </div>
                     <p className="transaction-amount">{formatIls(transaction.amountMinor)}</p>
                   </div>
@@ -1235,6 +1290,19 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                     )}
                   </dl>
                   <div className="button-row transaction-card-actions">
+                    {!resolvedTransactionIds.has(transaction.id) &&
+                      (transaction.direction === "member_owes_user" || transaction.direction === "user_owes_member") && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={!!resolvingTransactionId}
+                          onClick={() => void handleResolveTransaction(transaction)}
+                        >
+                          {resolvingTransactionId === transaction.id
+                            ? ui.loading.resolvingTransaction
+                            : ui.actions.settle}
+                        </Button>
+                      )}
                     <Button type="button" variant="white" onClick={() => openEditTransaction(transaction)}>
                       {ui.actions.edit}
                     </Button>
@@ -1246,6 +1314,11 @@ export function App({ repository, userEmail, onLogout }: AppProps) {
                       {ui.actions.delete}
                     </Button>
                   </div>
+                  {resolveTransactionError && resolveTransactionErrorId === transaction.id && (
+                    <p className="error-text" role="alert">
+                      {resolveTransactionError}
+                    </p>
+                  )}
                 </Card>
             ))}
           </div>

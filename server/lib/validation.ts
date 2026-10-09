@@ -52,6 +52,7 @@ export const createTransactionSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
   type: z.enum(VALID_TYPES).default("manual"),
+  settlesTransactionId: z.string().min(1).optional(),
 });
 
 /** Update schema — memberId and type are not changeable after creation. */
@@ -72,5 +73,4 @@ export const updateTransactionSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
 });
-
 

@@ -30,17 +30,18 @@ model Member {
 }
 
 model Transaction {
-  id              String   @id @default(cuid())
-  memberId        String
-  amountMinor     Int
-  direction       String
-  title           String
-  notes           String?
-  transactionDate String
-  type            String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  member          Member   @relation(fields: [memberId], references: [id])
+  id                   String       @id @default(cuid())
+  memberId             String
+  amountMinor          Int
+  direction            String
+  title                String
+  notes                String?
+  transactionDate      String
+  type                 String
+  settlesTransactionId String?      @unique
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  member               Member       @relation(fields: [memberId], references: [id])
+  settlesTransaction   Transaction? @relation("TransactionSettlement", fields: [settlesTransactionId], references: [id], onDelete: SetNull)
+  settlement           Transaction? @relation("TransactionSettlement")
 }
-
-

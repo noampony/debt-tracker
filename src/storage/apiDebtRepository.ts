@@ -48,6 +48,7 @@ function normalizeTransaction(raw: Record<string, unknown>): Transaction {
     createdAt: String(raw.createdAt),
     updatedAt: String(raw.updatedAt),
     type: raw.type as Transaction["type"],
+    settlesTransactionId: raw.settlesTransactionId != null ? String(raw.settlesTransactionId) : undefined,
   };
 }
 
@@ -113,6 +114,7 @@ export function createApiDebtRepository(
         notes: transaction.notes,
         transactionDate: transaction.transactionDate,
         type: transaction.type,
+        settlesTransactionId: transaction.settlesTransactionId,
       };
       const res = await req(`${API_BASE}/transactions`, {
         method: "POST",
@@ -163,4 +165,3 @@ export function createApiDebtRepository(
     },
   };
 }
-
